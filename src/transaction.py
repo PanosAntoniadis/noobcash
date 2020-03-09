@@ -12,18 +12,25 @@ from flask import Flask, jsonify, request, render_template
 
 
 class Transaction:
+    """
+    A noobcash transaction in the blockchain
 
-    def __init__(self, sender_address, sender_private_key, recipient_address, value):
+    Attributes:
+        sender_address (int): the public key of the sender's wallet.
+        receiver_address (int): the public key of the receiver's wallet.
+        amount (int): the amount of nbc to transfer.
+        transaction_id (int): hash of the transaction.
+        transaction_inputs (list): list of Transaction Input.
+        transaction_outputs (list): list of Transaction Output.
+    """
 
-        # set
-
-        # self.sender_address: To public key του wallet από το οποίο προέρχονται τα χρήματα
-        # self.receiver_address: To public key του wallet στο οποίο θα καταλήξουν τα χρήματα
-        # self.amount: το ποσό που θα μεταφερθεί
-        # self.transaction_id: το hash του transaction
-        # self.transaction_inputs: λίστα από Transaction Input
-        # self.transaction_outputs: λίστα από Transaction Output
-        # selfSignature
+    def __init__(self, sender_address, receiver_address, amount, transaction_id, transaction_inputs, transaction_outputs):
+        self.sender_address
+        self.receiver_address
+        self.amount
+        self.transaction_id
+        self.transaction_inputs
+        self.transaction_outputs
 
     def to_dict(self):
 

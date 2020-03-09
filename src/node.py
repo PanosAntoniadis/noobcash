@@ -2,17 +2,22 @@ import block
 import wallet
 
 
-class node:
-    def __init__():
-        self.NBC = 100
-        # set
+class Node:
+    """
+    A node in the network.
 
-        # self.chain
-        # self.current_id_count
-        # self.NBCs
-        # self.wallet
+    Attributes:
+        chain (Blockchain): the blockchain that the node has.
+        id (int): the id of the node.
+        nbc (int): the noobcash coins that the node has.
+        wallet (Wallet): the wallet of the node.
+    """
 
-        # slef.ring[]   #here we store information for every node, as its id, its address (ip:port) its public key and its balance
+    def __init__(self, chain, id, nbc, wallet):
+        self.chain = chain
+        self.id = id
+        self.nbc = nbc
+        self.wallet = wallet
 
     def create_new_block():
 
