@@ -1,5 +1,6 @@
 import block
 import wallet
+import requests
 
 
 class Node:
@@ -7,47 +8,140 @@ class Node:
     A node in the network.
 
     Attributes:
-        chain (Blockchain): the blockchain that the node has.
         id (int): the id of the node.
+        chain (Blockchain): the blockchain that the node has.
         nbc (int): the noobcash coins that the node has.
         wallet (Wallet): the wallet of the node.
+        ring (list): list of information about other nodes (id, ip, port, public_key, balance).
     """
 
-    def __init__(self, chain, id, nbc, wallet):
-        self.chain = chain
+    def __init__(self, id, chain, nbc, wallet):
         self.id = id
+        self.chain = chain
         self.nbc = nbc
-        self.wallet = wallet
+        self.wallet = create_wallet()
+        self.ring = []
 
-    def create_new_block():
+    def create_new_block(self, index, nonce, previous_hash):
+        # Creates a new block for the blockchain.
+        return Block(index, nonce, previous_hash)
 
-    def create_wallet():
-        # create a wallet for this node, with a public key and a private key
+    def create_wallet(self):
+        # Creates a wallet for this node, with a public key and a private key
+        self.wallet = wallet()
 
-    def register_node_to_ring():
+    def register_node_to_ring(self, id, ip, port, public_key):
         # add this node to the ring, only the bootstrap node can add a node to the ring after checking his wallet and ip:port address
         # bottstrap node informs all other nodes and gives the request node an id and 100 NBCs
+        self.ring.append(
+            {'id': id, 'ip': ip, 'port': port, 'public_key': public_key})
 
-    def create_transaction(sender, receiver, signature):
-        # remember to broadcast it
+    def create_transaction(self, receiver, amount, signature):
+        """
+        Creates a transaction.
+        """
 
-    def broadcast_transaction():
+        # Fill the input of the transaction with UTXOs, by iterating through
+        # the previous transactions of the node.
+        inputs = []
+        nbc_sent = 0
+        for tr in this.wallet.transactions:
+            for output in tr.transaction_outputs:
+                if output.recipient == this.wallet.public_key and output.unspent:
+                    inputs.append(TransactionInput(tr.transaction_id))
+                    nbc_sent += output.amount
+                if nbc_sent >= amount:
+                    # Exit the loop when UTXOs exceeds the amount of the transaction.
+                    break
 
-    def validdate_transaction():
-        # use of signature and NBCs balance
+        transaction = Transaction(
+            sender_address=this.wallet.public_key, receiver_address=receiver, amount=amount,
+            transaction_inputs=inputs, signature=signature. nbc_sent)
+
+        # Broadcast the transaction to the whole network.
+        self.broadcast_transaction(transaction)
+
+    def broadcast_transaction(self, transaction):
+        """
+        Broadcasts a transaction to the whole network.
+        """
+
+        for node in self.ring:
+            address = node['ip'] + node['port']
+            requests.get(url=address, params=vars(transaction))
+
+    def validate_transaction(self, transaction):
+        """
+        Validates an incoming transaction.
+
+            The validation consists of:
+            a) Verification of the signature.
+            b) Check that the transaction inputs are unspent transactions.
+            c) Create the 2 transaction outputs and add them in UTXOs list.
+        """
+
+        if not transaction.verify_signature():
+            return False
+
+        for node in ring:
+            if node['public_key'] == transaction.sender_address:
+                if node['balance'] >= transaction.amount:
+                    node['balance'] -= transaction.amount
+                    return True
+        return False
 
     def add_transaction_to_block():
         # if enough transactions  mine
 
-    def mine_block():
+    def mine_block(self, block):
+        """
+        Implements the proof-of-work.
+        """
+        block.nonce = 0
+        computed_hash = block.get_hash()
+        while not computed_hash.startswith('0' * MINING_DIFFICULTY):
+            block.nonce += 1
+            computed_hash = block.get_hash()
+        return computed_hash
 
-    def broadcast_block():
+    def broadcast_block(self, block):
+        """
+        Broadcasts a validated block in the rest nodes.
+        """
 
+        for node in self.ring:
+            address = node['ip'] + node['port']
+            requests.get(url=address, params=vars(block))
+
+    def validate_block(self. block):
+        """
+        Validates an incoming block.
+
+            The validation consists of:
+            a) Check that current hash is valid.
+            b) Check that the previous hash equals to the hash of the previous block.
+        """
+
+        valid_previous = block.previous_hash == node.chain.blocks[-1].current_hash
+        return valid_previous and (block.current_hash == block.get_hash())
+
+
+"""
     def valid_proof(.., difficulty=MINING_DIFFICULTY):
         # concencus functions
+"""
 
-    def valid_chain(self, chain):
-        # check for the longer chain accroose all nodes
+   def validate_chain(self, chain):
+        """
+        Validates all the blocks of a chain.
+
+            This function is called for every newcoming node in the blockchain.
+        """
+
+        for block in chain:
+            if not self.validate(block):
+                return False
+        return True
 
     def resolve_conflicts(self):
         # resolve correct chain

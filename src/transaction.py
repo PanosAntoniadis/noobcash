@@ -65,3 +65,15 @@ class Transaction:
         h = SHA.new(message)
         signer = PKCS1_v1_5.new(key)
         self.signature = signer.sign(h)
+
+    def verify_signature(self):
+        """
+        Verifies the signature of a transaction.
+        """
+        key = RSA.importKey(self.sender_address)
+        h = SHA.new(self.current_hash)
+        verifier = PKCS1_v1_5.new(key)
+        if verifier.verify(h, self.signature):
+            return True
+        else:
+            print False
