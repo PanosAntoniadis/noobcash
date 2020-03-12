@@ -1,6 +1,7 @@
-import block
-import wallet
 import requests
+from blockchain import Blockchain
+from block import Block
+from wallet import Wallet
 
 
 class Node:
@@ -15,20 +16,20 @@ class Node:
         ring (list): list of information about other nodes (id, ip, port, public_key, balance).
     """
 
-    def __init__(self, id, chain, nbc, wallet):
+    def __init__(self, id, nbc):
         self.id = id
-        self.chain = chain
         self.nbc = nbc
-        self.wallet = create_wallet()
+        # Initialize a new chain for the node and create its wallet.
+        self.chain = Blockchain()
+        self.wallet = Wallet()
         self.ring = []
+
+    def __str__(self):
+        return str(self.__class__) + ": " + str(self.__dict__)
 
     def create_new_block(self, index, nonce, previous_hash):
         # Creates a new block for the blockchain.
         return Block(index, nonce, previous_hash)
-
-    def create_wallet(self):
-        # Creates a wallet for this node, with a public key and a private key
-        self.wallet = wallet()
 
     def register_node_to_ring(self, id, ip, port, public_key):
         # add this node to the ring, only the bootstrap node can add a node to the ring after checking his wallet and ip:port address
@@ -90,9 +91,6 @@ class Node:
                     return True
         return False
 
-    def add_transaction_to_block():
-        # if enough transactions  mine
-
     def mine_block(self, block):
         """
         Implements the proof-of-work.
@@ -113,7 +111,7 @@ class Node:
             address = node['ip'] + node['port']
             requests.get(url=address, params=vars(block))
 
-    def validate_block(self. block):
+    def validate_block(self, block):
         """
         Validates an incoming block.
 
@@ -125,13 +123,7 @@ class Node:
         valid_previous = block.previous_hash == node.chain.blocks[-1].current_hash
         return valid_previous and (block.current_hash == block.get_hash())
 
-
-"""
-    def valid_proof(.., difficulty=MINING_DIFFICULTY):
-        # concencus functions
-"""
-
-   def validate_chain(self, chain):
+    def validate_chain(self, chain):
         """
         Validates all the blocks of a chain.
 
@@ -143,5 +135,15 @@ class Node:
                 return False
         return True
 
+
+"""
+    def valid_proof(.., difficulty=MINING_DIFFICULTY):
+        # concencus functions
+
+    def add_transaction_to_block():
+        # if enough transactions  mine
+
     def resolve_conflicts(self):
         # resolve correct chain
+
+"""

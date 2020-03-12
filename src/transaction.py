@@ -1,5 +1,6 @@
 from collections import OrderedDict
 import binascii
+import json
 
 import Crypto
 import Crypto.Random
@@ -9,6 +10,8 @@ from Crypto.Signature import PKCS1_v1_5
 
 import requests
 from flask import Flask, jsonify, request, render_template
+
+from transaction_output import TransactionOutput
 
 
 class Transaction:
@@ -33,6 +36,7 @@ class Transaction:
         self.receiver_address = receiver_address
         self.amount = amount
         self.transaction_inputs = transaction_inputs
+        self.transaction_id = self.get_hash()
 
         # Compute the outputs of the transaction.
         # - output for the nbcs sent to the receiver.
@@ -47,14 +51,24 @@ class Transaction:
                 self.transaction_id, sender_address, nbc_sent - amount)
             self.transaction_outputs.append(sender_output)
 
-        self.transaction_id = self.get_hash()
         self.signature = None
+
+    def __str__(self):
+        return str(self.__class__) + ": " + str(self.__dict__)
 
     def get_hash(self):
         """
-        Compute the hash of the current transaction.
+        Computes the hash of the transaction.
         """
-        return SHA256.new(self.sender_address + self.receiver_address + self.amount).hexdigest()
+
+        ### ATTENTION ####
+        # Here, instead of computing the hash in the dump of the object, we
+        # generate a random number. I did this because I think this hash is just
+        # a unique id and is not used in any authentication. In the dump, problems
+        # occured becasuse RSA objects are not JSON serializable. CHECK AGAIN !!
+
+        # Return a random integer, at most 128 bits long.
+        return Crypto.Random.random.getrandbits(128)
 
     def sign_transaction(self, private_key):
         """
@@ -76,4 +90,4 @@ class Transaction:
         if verifier.verify(h, self.signature):
             return True
         else:
-            print False
+            return False

@@ -12,6 +12,8 @@ from time import time
 from urllib.parse import urlparse
 from uuid import uuid4
 
+from json import JSONEncoder
+
 
 class Wallet:
     """
@@ -26,9 +28,13 @@ class Wallet:
     def __init__(self):
         # Generate a private key of key length of 1024 bits.
         self.private_key = RSA.generate(1024)
+
         # Generate the public key from the above private key.
         self.public_key = self.private_key.publickey()
         self.transactions = []
+
+    def __str__(self):
+        return str(self.__class__) + ": " + str(self.__dict__)
 
     def get_balance(self):
         """
