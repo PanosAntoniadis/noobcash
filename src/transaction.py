@@ -67,16 +67,20 @@ class Transaction:
         # a unique id and is not used in any authentication. In the dump, problems
         # occured becasuse RSA objects are not JSON serializable. CHECK AGAIN !!
 
+        # SOLUTION
+        # it is used when we sign a transaction
+
         # Return a random integer, at most 128 bits long.
-        return Crypto.Random.random.getrandbits(128)
+        return Crypto.Random.get_random_bytes(128)
 
     def sign_transaction(self, private_key):
         """
         Sign the current transaction with the given private key.
         """
-        message = self.current_hash
+        message = self.transaction_id
         key = RSA.importKey(private_key)
-        h = SHA.new(message)
+        print(message)
+        h = SHA256.new(message)
         signer = PKCS1_v1_5.new(key)
         self.signature = signer.sign(h)
 
@@ -85,7 +89,7 @@ class Transaction:
         Verifies the signature of a transaction.
         """
         key = RSA.importKey(self.sender_address)
-        h = SHA.new(self.current_hash)
+        h = SHA256.new(self.transaction_id)
         verifier = PKCS1_v1_5.new(key)
         if verifier.verify(h, self.signature):
             return True

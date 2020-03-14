@@ -2,6 +2,7 @@ import requests
 from blockchain import Blockchain
 from block import Block
 from wallet import Wallet
+from transaction import Transaction
 
 
 class Node:
@@ -16,9 +17,9 @@ class Node:
         ring (list): list of information about other nodes (id, ip, port, public_key, balance).
     """
 
-    def __init__(self, id, nbc):
-        self.id = id
-        self.nbc = nbc
+    def __init__(self):
+        self.id = None
+        self.nbc = 0
         # Initialize a new chain for the node and create its wallet.
         self.chain = Blockchain()
         self.wallet = Wallet()
@@ -27,9 +28,13 @@ class Node:
     def __str__(self):
         return str(self.__class__) + ": " + str(self.__dict__)
 
-    def create_new_block(self, index, nonce, previous_hash):
+    def create_new_block(self, nonce, previous_hash):
         # Creates a new block for the blockchain.
-        return Block(index, nonce, previous_hash)
+        if len(self.chain.blocks) > 0:
+            new_idx = self.chain.blocks[-1].idx + 1
+        else:
+            new_idx = 0
+        return Block(new_idx, nonce, previous_hash)
 
     def register_node_to_ring(self, id, ip, port, public_key):
         # add this node to the ring, only the bootstrap node can add a node to the ring after checking his wallet and ip:port address
@@ -37,7 +42,7 @@ class Node:
         self.ring.append(
             {'id': id, 'ip': ip, 'port': port, 'public_key': public_key})
 
-    def create_transaction(self, receiver, amount, signature):
+    def create_transaction(self, receiver, amount):
         """
         Creates a transaction.
         """
@@ -46,9 +51,9 @@ class Node:
         # the previous transactions of the node.
         inputs = []
         nbc_sent = 0
-        for tr in this.wallet.transactions:
+        for tr in self.wallet.transactions:
             for output in tr.transaction_outputs:
-                if output.recipient == this.wallet.public_key and output.unspent:
+                if output.recipient == self.wallet.public_key and output.unspent:
                     inputs.append(TransactionInput(tr.transaction_id))
                     nbc_sent += output.amount
                 if nbc_sent >= amount:
@@ -56,9 +61,11 @@ class Node:
                     break
 
         transaction = Transaction(
-            sender_address=this.wallet.public_key, receiver_address=receiver, amount=amount,
-            transaction_inputs=inputs, signature=signature. nbc_sent)
+            sender_address=self.wallet.public_key, receiver_address=receiver, amount=amount,
+            transaction_inputs=inputs, nbc_sent=nbc_sent)
 
+        # sign the transaction
+        transaction.sign_transaction(self.wallet.private_key)
         # Broadcast the transaction to the whole network.
         self.broadcast_transaction(transaction)
 
@@ -68,8 +75,9 @@ class Node:
         """
 
         for node in self.ring:
-            address = node['ip'] + node['port']
-            requests.get(url=address, params=vars(transaction))
+            address = 'http://' + node['ip'] + ':' + node['port']
+            requests.post(address + '/register_node',
+                          data=vars(transaction))
 
     def validate_transaction(self, transaction):
         """
@@ -109,7 +117,7 @@ class Node:
 
         for node in self.ring:
             address = node['ip'] + node['port']
-            requests.get(url=address, params=vars(block))
+            requests.post(url=address, data=vars(block))
 
     def validate_block(self, block):
         """

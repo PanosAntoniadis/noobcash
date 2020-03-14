@@ -27,10 +27,12 @@ class Wallet:
 
     def __init__(self):
         # Generate a private key of key length of 1024 bits.
-        self.private_key = RSA.generate(1024)
+        key = RSA.generate(1024)
+
+        self.private_key = key.exportKey()
 
         # Generate the public key from the above private key.
-        self.public_key = self.private_key.publickey()
+        self.public_key = key.publickey().exportKey()
         self.transactions = []
 
     def __str__(self):
