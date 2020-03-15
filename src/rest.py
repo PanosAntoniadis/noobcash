@@ -80,7 +80,9 @@ if __name__ == '__main__':
         node.id = 0
 
         # Defines the genesis block.
-        gen_block = node.create_new_block(nonce=0, previous_hash=1)
+        gen_block = node.create_new_block(previous_hash=1)
+
+        gen_block.nonce = 0
 
         # Adds the first and only transaction in the genesis block.
         first_transaction = Transaction(
