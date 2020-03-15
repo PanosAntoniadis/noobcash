@@ -6,7 +6,7 @@ import Crypto
 import Crypto.Random
 from Crypto.Hash import SHA256
 from Crypto.PublicKey import RSA
-from Crypto.Signature import PKCS1_v1_5
+from Crypto.Signature import pss
 
 import requests
 from flask import Flask, jsonify, request, render_template
@@ -81,7 +81,7 @@ class Transaction:
         key = RSA.importKey(private_key)
         print(message)
         h = SHA256.new(message)
-        signer = PKCS1_v1_5.new(key)
+        signer = pss.new(key)
         self.signature = signer.sign(h)
 
     def verify_signature(self):
@@ -90,8 +90,11 @@ class Transaction:
         """
         key = RSA.importKey(self.sender_address)
         h = SHA256.new(self.transaction_id)
-        verifier = PKCS1_v1_5.new(key)
-        if verifier.verify(h, self.signature):
+        verifier = pss.new(key)
+        try:
+            verifier.verify(h, self.signature)
+            print("The signature is authentic.")
             return True
-        else:
+        except (ValueError, TypeError):
+            print("The signature is not authentic.")
             return False
