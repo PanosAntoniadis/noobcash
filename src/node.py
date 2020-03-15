@@ -1,9 +1,10 @@
 import requests
+
 from blockchain import Blockchain
 from block import Block
 from wallet import Wallet
 from transaction import Transaction
-
+from transaction_input import TransactionInput
 
 class Node:
     """
