@@ -16,11 +16,11 @@ class Block:
         previous_hash (hash object): hash of the previous block in the blockchain.
     """
 
-    def __init__(self, index, nonce, previous_hash):
+    def __init__(self, index, previous_hash):
         self.index = index
         self.timestamp = time()
         self.transactions = []
-        self.nonce = nonce
+        self.nonce = None
         self.previous_hash = previous_hash
         self.current_hash = self.get_hash()
 

@@ -16,9 +16,6 @@ BOOTSTRAP_PORT = '5000'
 # a block can have.
 CAPACITY = 10
 
-# Define the difficulty of proof-of-work.
-MINING_DIFFICULTY = 4
-
 app = Flask(__name__)
 #app.config["DEBUG"] = True
 CORS(app)

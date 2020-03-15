@@ -6,6 +6,11 @@ from wallet import Wallet
 from transaction import Transaction
 from transaction_input import TransactionInput
 
+<<<<<<< HEAD
+=======
+# Define the difficulty of proof-of-work.
+MINING_DIFFICULTY = 4
+>>>>>>> ab444576df0affa0171e9eabed3d326c2bf80c4f
 
 class Node:
     """
@@ -94,7 +99,7 @@ class Node:
         if not transaction.verify_signature():
             return False
 
-        for node in ring:
+        for node in self.ring:
             if node['public_key'] == transaction.sender_address:
                 if node['balance'] >= transaction.amount:
                     node['balance'] -= transaction.amount
@@ -130,7 +135,7 @@ class Node:
             b) Check that the previous hash equals to the hash of the previous block.
         """
 
-        valid_previous = block.previous_hash == node.chain.blocks[-1].current_hash
+        valid_previous = block.previous_hash == self.chain.blocks[-1].current_hash
         return valid_previous and (block.current_hash == block.get_hash())
 
     def validate_chain(self, chain):
@@ -141,7 +146,7 @@ class Node:
         """
 
         for block in chain:
-            if not self.validate(block):
+            if not self.validate_block(block):
                 return False
         return True
 
