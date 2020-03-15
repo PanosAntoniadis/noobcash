@@ -2,6 +2,7 @@ import requests
 from argparse import ArgumentParser
 from flask import Flask, jsonify, request, render_template
 from flask_cors import CORS
+import socket
 
 from block import Block
 from node import Node
@@ -19,6 +20,10 @@ CAPACITY = 10
 app = Flask(__name__)
 #app.config["DEBUG"] = True
 CORS(app)
+
+#Getting the IP address of the device
+hostname = socket.gethostname()    
+IPAddr = socket.gethostbyname(hostname)   
 
 # Initialize a node.
 node = None
@@ -101,7 +106,7 @@ if __name__ == '__main__':
 
         ####### ATTENTION #######
         # When the system run in oceanos the ip will
-        # be different here.
+        # be the IPAddr of the device.
 
         response = requests.post(
             register_address,
