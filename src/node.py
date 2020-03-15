@@ -6,6 +6,7 @@ from wallet import Wallet
 from transaction import Transaction
 from transaction_input import TransactionInput
 
+
 class Node:
     """
     A node in the network.
