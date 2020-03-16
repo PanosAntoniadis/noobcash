@@ -28,7 +28,7 @@ class Transaction:
         signature (int): signature that verifies that the owner of the wallet created the transaction.
     """
 
-    def __init__(self, sender_address, receiver_address, amount, transaction_inputs, nbc_sent):
+    def __init__(self, sender_address, receiver_address, amount, transaction_inputs, nbc_sent, transaction_id = None):
         # nbc_sent is the amount of money that the sender send for the transaction.
         # Equals the sum of the amounts of the transaction inputs.
 
@@ -36,7 +36,11 @@ class Transaction:
         self.receiver_address = receiver_address
         self.amount = amount
         self.transaction_inputs = transaction_inputs
-        self.transaction_id = self.get_hash()
+        
+        if (transaction_id):
+            self.transaction_id = transaction_id
+        else: 
+            self.transaction_id = self.get_hash()
 
         # Compute the outputs of the transaction.
         # - output for the nbcs sent to the receiver.
@@ -71,18 +75,18 @@ class Transaction:
         # it is used when we sign a transaction
 
         # Return a random integer, at most 128 bits long.
-        return Crypto.Random.get_random_bytes(128)
+        return Crypto.Random.get_random_bytes(128).decode("ISO-8859-1")
 
     def sign_transaction(self, private_key):
         """
         Sign the current transaction with the given private key.
         """
-        message = self.transaction_id
+        message = self.transaction_id.encode("ISO-8859-1")
         key = RSA.importKey(private_key)
         print(message)
         h = SHA256.new(message)
         signer = pss.new(key)
-        self.signature = signer.sign(h)
+        self.signature = signer.sign(h).decode('ISO-8859-1')
 
     def verify_signature(self):
         """
@@ -92,7 +96,7 @@ class Transaction:
         h = SHA256.new(self.transaction_id)
         verifier = pss.new(key)
         try:
-            verifier.verify(h, self.signature)
+            verifier.verify(h, self.signature).decode('ISO-8859-1')
             print("The signature is authentic.")
             return True
         except (ValueError, TypeError):
