@@ -28,7 +28,7 @@ class Transaction:
         signature (int): signature that verifies that the owner of the wallet created the transaction.
     """
 
-    def __init__(self, sender_address, receiver_address, amount, transaction_inputs, nbc_sent, transaction_id = None, transaction_outputs = None):
+    def __init__(self, sender_address, receiver_address, amount, transaction_inputs, nbc_sent, transaction_id = None, transaction_outputs = None, signature = None):
         # nbc_sent is the amount of money that the sender send for the transaction.
         # Equals the sum of the amounts of the transaction inputs.
 
@@ -43,26 +43,42 @@ class Transaction:
         else: 
             self.transaction_id = self.get_hash()
 
-        # Compute the outputs of the transaction, if its not set.
-        # - output for the nbcs sent to the receiver.
-        # - output for the nbcs sent back to the sender as change.
         if (not transaction_outputs):
-            reciever_output = TransactionOutput(
-                self.transaction_id, receiver_address, amount)
-            self.transaction_outputs = [reciever_output]
-            if nbc_sent > amount:
-                # If there is change for the transaction.
-                sender_output = TransactionOutput(
-                    self.transaction_id, sender_address, nbc_sent - amount)
-                self.transaction_outputs.append(sender_output)
+            self.compute_transaction_output()
         else:
-            # CONVERT LIST OF DICTIONARIES TO TransactionOuputs
-            None
+            self.transaction_outputs = transaction_outputs
 
-        self.signature = None
+        self.signature = signature
+
+    @classmethod
+    def from_dict(cls, transaction_dict, outputs):
+        sender_address = transaction_dict["sender_address"]
+        receiver_address = transaction_dict["receiver_address"]
+        amount = transaction_dict["amount"]
+        transaction_inputs = transaction_dict["transaction_inputs"]
+        nbc_sent = transaction_dict["nbc_sent"]
+        transaction_id = transaction_dict["transaction_id"]
+        signature = transaction_dict["signature"]
+
+        return cls(sender_address, receiver_address, amount, transaction_inputs, nbc_sent, transaction_id, outputs, signature)
+
 
     def __str__(self):
         return str(self.__class__) + ": " + str(self.__dict__)
+
+    def compute_transaction_output(self):
+        # Compute the outputs of the transaction, if its not set.
+        # - output for the nbcs sent to the receiver.
+        # - output for the nbcs sent back to the sender as change.
+        reciever_output = TransactionOutput(
+            self.transaction_id, self.receiver_address, self.amount)
+        self.transaction_outputs = [reciever_output]
+
+        if self.nbc_sent > self.amount:
+            # If there is change for the transaction.
+            sender_output = TransactionOutput(
+                self.transaction_id, self.sender_address, self.nbc_sent - self.amount)
+            self.transaction_outputs.append(sender_output)
 
     def get_hash(self):
         """
@@ -86,8 +102,7 @@ class Transaction:
         Sign the current transaction with the given private key.
         """
         message = self.transaction_id.encode("ISO-8859-1")
-        key = RSA.importKey(private_key)
-        print(message)
+        key = RSA.importKey(private_key.encode("ISO-8859-1"))
         h = SHA256.new(message)
         signer = pss.new(key)
         self.signature = signer.sign(h).decode('ISO-8859-1')
@@ -96,11 +111,11 @@ class Transaction:
         """
         Verifies the signature of a transaction.
         """
-        key = RSA.importKey(self.sender_address)
-        h = SHA256.new(self.transaction_id)
+        key = RSA.importKey(self.sender_address.encode('ISO-8859-1'))
+        h = SHA256.new(self.transaction_id.encode('ISO-8859-1'))
         verifier = pss.new(key)
         try:
-            verifier.verify(h, self.signature).decode('ISO-8859-1')
+            verifier.verify(h, self.signature.encode('ISO-8859-1'))
             print("The signature is authentic.")
             return True
         except (ValueError, TypeError):
