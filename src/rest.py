@@ -24,8 +24,8 @@ app = Flask(__name__)
 CORS(app)
 
 # Getting the IP address of the device
-hostname = socket.gethostname()    
-IPAddr = socket.gethostbyname(hostname)   
+hostname = socket.gethostname()
+IPAddr = socket.gethostbyname(hostname)
 
 # Initialize a node.
 node = None
