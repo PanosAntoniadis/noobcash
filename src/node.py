@@ -61,9 +61,9 @@ class Node:
                 if output.recipient == self.wallet.public_key and output.unspent:
                     inputs.append(TransactionInput(tr.transaction_id))
                     nbc_sent += output.amount
-                if nbc_sent >= amount:
-                    # Exit the loop when UTXOs exceeds the amount of the transaction.
-                    break
+            if nbc_sent >= amount:
+                # Exit the loop when UTXOs exceeds the amount of the transaction.
+                break
 
         transaction = Transaction(
             sender_address=self.wallet.public_key, receiver_address=receiver, amount=amount,
@@ -81,7 +81,7 @@ class Node:
 
         for node in self.ring:
             address = 'http://' + node['ip'] + ':' + node['port']
-            requests.post(address + '/register_node',
+            requests.post(address + '/create_transaction',
                           data=vars(transaction))
 
     def validate_transaction(self, transaction):
