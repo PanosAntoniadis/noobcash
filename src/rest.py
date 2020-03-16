@@ -3,6 +3,8 @@ from argparse import ArgumentParser
 from flask import Flask, jsonify, request, render_template
 from flask_cors import CORS
 import socket
+import threading
+import time
 
 from block import Block
 from node import Node
@@ -21,12 +23,18 @@ app = Flask(__name__)
 #app.config["DEBUG"] = True
 CORS(app)
 
-#Getting the IP address of the device
+# Getting the IP address of the device
 hostname = socket.gethostname()    
 IPAddr = socket.gethostbyname(hostname)   
 
 # Initialize a node.
 node = None
+
+@app.route('/create_transaction', methods=['POST'])
+def create_transaction():
+    sender_address = request.form.get('sender_address')
+
+    return jsonify({'message': "OK"})
 
 
 @app.route('/register_node', methods=['POST'])
@@ -75,6 +83,7 @@ if __name__ == '__main__':
     n = args.n
     is_bootstrap = args.bootstrap
 
+
     # Initialize the node object of the current node.
     node = Node()
 
@@ -95,7 +104,7 @@ if __name__ == '__main__':
         gen_block.add_transaction(first_transaction)
 
         # Listen in the specified address (ip:port)
-        app.run(host=BOOTSTRAP_IP, port=BOOTSTRAP_PORT)
+        app.run(host=BOOTSTRAP_IP, port=port)
     else:
         """
         The rest nodes communicate with the bootstrap node.
@@ -108,16 +117,22 @@ if __name__ == '__main__':
         # When the system run in oceanos the ip will
         # be the IPAddr of the device.
 
-        response = requests.post(
-            register_address,
-            data={'public_key': node.wallet.public_key,
-                  'ip': BOOTSTRAP_IP, 'port': port}
-        )
+        def thread_function():
+            time.sleep(2)
+            response = requests.post(
+                register_address,
+                data={'public_key': node.wallet.public_key,
+                    'ip': BOOTSTRAP_IP, 'port': port}
+            )
 
-        if response.status_code == 200:
-            print(response.json()['id'])
+            if response.status_code == 200:
+                print("Node initialized")
 
-        node.id = response.json()['id']
+            node.id = response.json()['id']
+
+
+        req = threading.Thread(target=thread_function, args=())
+        req.start()
 
         # Listen in the specified address (ip:port)
         app.run(host=BOOTSTRAP_IP, port=port)
