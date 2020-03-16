@@ -28,7 +28,7 @@ class Transaction:
         signature (int): signature that verifies that the owner of the wallet created the transaction.
     """
 
-    def __init__(self, sender_address, receiver_address, amount, transaction_inputs, nbc_sent, transaction_id = None):
+    def __init__(self, sender_address, receiver_address, amount, transaction_inputs, nbc_sent, transaction_id = None, transaction_outputs = None):
         # nbc_sent is the amount of money that the sender send for the transaction.
         # Equals the sum of the amounts of the transaction inputs.
 
@@ -43,18 +43,21 @@ class Transaction:
         else: 
             self.transaction_id = self.get_hash()
 
-        # Compute the outputs of the transaction.
+        # Compute the outputs of the transaction, if its not set.
         # - output for the nbcs sent to the receiver.
         # - output for the nbcs sent back to the sender as change.
-
-        reciever_output = TransactionOutput(
-            self.transaction_id, receiver_address, amount)
-        self.transaction_outputs = [reciever_output]
-        if nbc_sent > amount:
-            # If there is change for the transaction.
-            sender_output = TransactionOutput(
-                self.transaction_id, sender_address, nbc_sent - amount)
-            self.transaction_outputs.append(sender_output)
+        if (not transaction_outputs):
+            reciever_output = TransactionOutput(
+                self.transaction_id, receiver_address, amount)
+            self.transaction_outputs = [reciever_output]
+            if nbc_sent > amount:
+                # If there is change for the transaction.
+                sender_output = TransactionOutput(
+                    self.transaction_id, sender_address, nbc_sent - amount)
+                self.transaction_outputs.append(sender_output)
+        else:
+            # CONVERT LIST OF DICTIONARIES TO TransactionOuputs
+            None
 
         self.signature = None
 
