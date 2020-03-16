@@ -1,4 +1,5 @@
 import requests
+import json
 
 from blockchain import Blockchain
 from block import Block
@@ -82,7 +83,7 @@ class Node:
         for node in self.ring:
             address = 'http://' + node['ip'] + ':' + node['port']
             requests.post(address + '/create_transaction',
-                          data=vars(transaction))
+                          data=vars(transaction))                          
 
     def validate_transaction(self, transaction):
         """
