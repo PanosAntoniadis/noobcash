@@ -5,6 +5,7 @@ from flask_cors import CORS
 import socket
 import threading
 import time
+import ast
 
 from block import Block
 from node import Node
@@ -39,8 +40,7 @@ def create_transaction():
     nbc_sent = request.form.get('nbc_sent')
     transaction_id = request.form.get(('transaction_id'))
 
-    #transaction = Transaction(sender_address, receiver_address, amount, transaction_inputs, nbc_sent)  
-    print(request.form.get("transaction_ouputs"))     
+    print(ast.literal_eval(request.form.get("transaction_outputs")))     
     return jsonify({'message': "OK", 'amount': amount})
 
 
@@ -68,6 +68,9 @@ def register_node():
     node.register_node_to_ring(
         id=node_id, ip=node_ip, port=node_port, public_key=node_key)
 
+     ####### ATTENTION #######
+     # On deployment we will create the transactions below when node_id == n-1
+
     if (node_id == 1):
         for ring_node in node.ring:
             node.create_transaction(
@@ -75,8 +78,6 @@ def register_node():
                 amount=100
             )
 
-    #node.create_transaction(
-        #receiver=node_key, amount=100)
 
     return jsonify({'id': node_id})
 
