@@ -15,5 +15,12 @@ class TransactionOutput:
         self.amount = amount
         self.unspent = True
 
+    @classmethod
+    def fromdict(cls, output_dict):
+        transaction_id = output_dict["transaction_id"]
+        recipient = output_dict["recipient"]
+        amount = int(output_dict["amount"])
+        return cls(transaction_id, recipient, amount)
+
     def __str__(self):
         return str(self.__dict__)
