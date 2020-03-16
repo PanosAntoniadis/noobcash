@@ -28,13 +28,20 @@ hostname = socket.gethostname()
 IPAddr = socket.gethostbyname(hostname)
 
 # Initialize a node.
-node = None
+node: Node = None
 
 @app.route('/create_transaction', methods=['POST'])
 def create_transaction():
     sender_address = request.form.get('sender_address')
+    receiver_address = request.form.get('receiver_address')
+    amount = request.form.get('amount')
+    transaction_inputs = request.form.get('transaction_inputs')
+    nbc_sent = request.form.get('nbc_sent')
+    transaction_id = request.form.get(('transaction_id'))
 
-    return jsonify({'message': "OK"})
+    #transaction = Transaction(sender_address, receiver_address, amount, transaction_inputs, nbc_sent)  
+    print(request.form.get("transaction_ouputs"))     
+    return jsonify({'message': "OK", 'amount': amount})
 
 
 @app.route('/register_node', methods=['POST'])
@@ -61,8 +68,15 @@ def register_node():
     node.register_node_to_ring(
         id=node_id, ip=node_ip, port=node_port, public_key=node_key)
 
-    node.create_transaction(
-        receiver=node_key, amount=100)
+    if (node_id == 1):
+        for ring_node in node.ring:
+            node.create_transaction(
+                receiver=ring_node['public_key'],
+                amount=100
+            )
+
+    #node.create_transaction(
+        #receiver=node_key, amount=100)
 
     return jsonify({'id': node_id})
 
@@ -100,11 +114,11 @@ if __name__ == '__main__':
 
         # Adds the first and only transaction in the genesis block.
         first_transaction = Transaction(
-            sender_address=0, receiver_address=node.wallet.public_key, amount=100 * n, transaction_inputs=None, nbc_sent=100 * n)
+            sender_address="0", receiver_address=node.wallet.public_key, amount=100 * n, transaction_inputs=None, nbc_sent=100 * n)
         gen_block.add_transaction(first_transaction)
 
         # Listen in the specified address (ip:port)
-        app.run(host=BOOTSTRAP_IP, port=port)
+        app.run(host=BOOTSTRAP_IP, port=BOOTSTRAP_PORT)
     else:
         """
         The rest nodes communicate with the bootstrap node.
