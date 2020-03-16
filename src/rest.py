@@ -23,11 +23,7 @@ app = Flask(__name__)
 #app.config["DEBUG"] = True
 CORS(app)
 
-<<<<<<< HEAD
-#Getting the IP address of the device
-=======
 # Getting the IP address of the device
->>>>>>> d94aaa1eb3e08b2b8f237886e19a0531a341ce03
 hostname = socket.gethostname()
 IPAddr = socket.gethostbyname(hostname)
 
