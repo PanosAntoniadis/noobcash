@@ -42,11 +42,11 @@ class Node:
             new_idx = 0
         return Block(new_idx, previous_hash)
 
-    def register_node_to_ring(self, id, ip, port, public_key):
+    def register_node_to_ring(self, id, ip, port, public_key, balance):
         # add this node to the ring, only the bootstrap node can add a node to the ring after checking his wallet and ip:port address
         # bottstrap node informs all other nodes and gives the request node an id and 100 NBCs
         self.ring.append(
-            {'id': id, 'ip': ip, 'port': port, 'public_key': public_key})
+            {'id': id, 'ip': ip, 'port': port, 'public_key': public_key, 'balance': balance})
 
     def create_transaction(self, receiver, amount):
         """
@@ -122,8 +122,9 @@ class Node:
         """
 
         for node in self.ring:
-            address = node['ip'] + node['port']
-            requests.post(url=address, data=vars(block))
+            address = 'http://' + node['ip'] + ':' + node['port']
+            requests.post(address + '/create_block',
+                          data="test") 
 
     def validate_block(self, block):
         """
@@ -136,6 +137,13 @@ class Node:
 
         valid_previous = block.previous_hash == self.chain.blocks[-1].current_hash
         return valid_previous and (block.current_hash == block.get_hash())
+    
+    def share_ring(self, ring_node):
+        for node in self.ring:
+            address = 'http://' + ring_node['ip'] + ':' + ring_node['port']
+            requests.post(address + '/get_ring',
+                        data=node)
+
 
     def validate_chain(self, chain):
         """
