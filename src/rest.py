@@ -36,11 +36,14 @@ def create_transaction():
     sender_address = request.form.get('sender_address')
     receiver_address = request.form.get('receiver_address')
     amount = request.form.get('amount')
-    transaction_inputs = request.form.get('transaction_inputs')
+    transaction_inputs = request.form.getlist('transaction_inputs')
     nbc_sent = request.form.get('nbc_sent')
     transaction_id = request.form.get(('transaction_id'))
 
-    print(ast.literal_eval(request.form.get("transaction_outputs")))     
+    transaction_ouputs = request.form.getlist("transaction_outputs")
+    for x in transaction_ouputs:
+        x = ast.literal_eval(x)
+
     return jsonify({'message': "OK", 'amount': amount})
 
 
