@@ -14,3 +14,6 @@ class TransactionOutput:
         self.recipient = recipient
         self.amount = amount
         self.unspent = True
+
+    def __str__(self):
+        return str(self.__class__) + ": " + str(self.__dict__)
