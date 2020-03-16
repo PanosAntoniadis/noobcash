@@ -10,6 +10,7 @@ import ast
 from block import Block
 from node import Node
 from transaction import Transaction
+from transaction_output import TransactionOutput
 
 # All nodes are aware of the ip and the port of the bootstrap
 # node, in order to communicate with it when entering the network.
@@ -33,18 +34,27 @@ node: Node = None
 
 @app.route('/create_transaction', methods=['POST'])
 def create_transaction():
-    sender_address = request.form.get('sender_address')
-    receiver_address = request.form.get('receiver_address')
-    amount = request.form.get('amount')
-    transaction_inputs = request.form.getlist('transaction_inputs')
-    nbc_sent = request.form.get('nbc_sent')
-    transaction_id = request.form.get(('transaction_id'))
+    transaction_dict = {
+        "sender_address" : request.form.get('sender_address'),
+        "receiver_address" : request.form.get('receiver_address'),
+        "amount" : int(request.form.get('amount')),
+        "transaction_inputs" : request.form.getlist('transaction_inputs'),
+        "nbc_sent" : int(request.form.get('nbc_sent')),
+        "transaction_id" : request.form.get('transaction_id'),
+        "signature" : request.form.get('signature')
+    }
 
-    transaction_ouputs = request.form.getlist("transaction_outputs")
-    for x in transaction_ouputs:
-        x = ast.literal_eval(x)
+    transaction_outputs = request.form.getlist("transaction_outputs")
+    transaction_outputs = [TransactionOutput.fromdict(ast.literal_eval(x)) for x in transaction_outputs]
+    
+    new_transaction = Transaction.from_dict(transaction_dict, transaction_outputs)
+    
+    if node.validate_transaction(new_transaction):
+        None
+    else:
+        return jsonify({'message': "The signature is not authentic"})
 
-    return jsonify({'message': "OK", 'amount': amount})
+    return jsonify({'message': "OK"})
 
 
 @app.route('/register_node', methods=['POST'])
@@ -65,25 +75,38 @@ def register_node():
     node_key = request.form.get('public_key')
     node_ip = request.form.get('ip')
     node_port = request.form.get('port')
-    node_id = len(node.ring) + 1
+    node_id = len(node.ring)
 
     # Add node in the list of registered nodes.
     node.register_node_to_ring(
-        id=node_id, ip=node_ip, port=node_port, public_key=node_key)
+        id=node_id, ip=node_ip, port=node_port, public_key=node_key, balance = 100)
 
      ####### ATTENTION #######
      # On deployment we will create the transactions below when node_id == n-1
 
     if (node_id == 1):
         for ring_node in node.ring:
-            node.create_transaction(
-                receiver=ring_node['public_key'],
-                amount=100
-            )
+            if ring_node["id"] != node.id:
+                node.share_ring(ring_node)
+                node.create_transaction(
+                    receiver=ring_node['public_key'],
+                    amount=100
+                )
 
 
     return jsonify({'id': node_id})
 
+@app.route('/get_ring', methods=['POST'])
+def get_ring():
+    node_id = request.form.get("id")
+    node_ip = request.form.get("ip")
+    node_port = request.form.get("port")
+    node_public_key = request.form.get("public_key")
+    node_balance = int(request.form.get("balance"))
+
+    node.register_node_to_ring(node_id, node_ip, node_port, node_public_key, node_balance)
+
+    return jsonify({'message': "OK"})
 
 if __name__ == '__main__':
     # Define the argument parser.
@@ -110,6 +133,7 @@ if __name__ == '__main__':
         The bootstrap node (id = 0) should create the genesis block.
         """
         node.id = 0
+        node.register_node_to_ring(node.id, BOOTSTRAP_IP, BOOTSTRAP_PORT, node.wallet.public_key, 100*n)
 
         # Defines the genesis block.
         gen_block = node.create_new_block(previous_hash=1)
