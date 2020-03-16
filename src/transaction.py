@@ -36,6 +36,7 @@ class Transaction:
         self.receiver_address = receiver_address
         self.amount = amount
         self.transaction_inputs = transaction_inputs
+        self.nbc_sent = nbc_sent
         
         if (transaction_id):
             self.transaction_id = transaction_id
