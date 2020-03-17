@@ -28,7 +28,7 @@ class Transaction:
         signature (int): signature that verifies that the owner of the wallet created the transaction.
     """
 
-    def __init__(self, sender_address, receiver_address, amount, transaction_inputs, nbc_sent, transaction_id = None, transaction_outputs = None, signature = None):
+    def __init__(self, sender_address, receiver_address, amount, transaction_inputs, nbc_sent, transaction_id=None, transaction_outputs=None, signature=None):
         # nbc_sent is the amount of money that the sender send for the transaction.
         # Equals the sum of the amounts of the transaction inputs.
 
@@ -37,10 +37,10 @@ class Transaction:
         self.amount = amount
         self.transaction_inputs = transaction_inputs
         self.nbc_sent = nbc_sent
-        
+
         if (transaction_id):
             self.transaction_id = transaction_id
-        else: 
+        else:
             self.transaction_id = self.get_hash()
 
         if (not transaction_outputs):
@@ -61,7 +61,6 @@ class Transaction:
         signature = transaction_dict["signature"]
 
         return cls(sender_address, receiver_address, amount, transaction_inputs, nbc_sent, transaction_id, outputs, signature)
-
 
     def __str__(self):
         return str(self.__class__) + ": " + str(self.__dict__)

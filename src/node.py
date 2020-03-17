@@ -1,5 +1,6 @@
 import requests
 import json
+import pickle
 
 from blockchain import Blockchain
 from block import Block
@@ -7,7 +8,7 @@ from wallet import Wallet
 from transaction import Transaction
 from transaction_input import TransactionInput
 
-#Setting MINING_DIFFICULTY
+# Setting MINING_DIFFICULTY
 MINING_DIFFICULTY = 4
 
 
@@ -81,9 +82,10 @@ class Node:
         """
 
         for node in self.ring:
-            address = 'http://' + node['ip'] + ':' + node['port']
-            requests.post(address + '/create_transaction',
-                          data=vars(transaction))                          
+            if node['id'] != self.id:
+                address = 'http://' + node['ip'] + ':' + node['port']
+                requests.post(address + '/get_transaction',
+                              data=pickle.dumps(transaction))
 
     def validate_transaction(self, transaction):
         """
@@ -122,9 +124,10 @@ class Node:
         """
 
         for node in self.ring:
-            address = 'http://' + node['ip'] + ':' + node['port']
-            requests.post(address + '/create_block',
-                          data="test") 
+            if node['id'] != self.id:
+                address = 'http://' + node['ip'] + ':' + node['port']
+                requests.post(address + '/get_block',
+                              data=pickle.dumps(block))
 
     def validate_block(self, block):
         """
@@ -137,13 +140,11 @@ class Node:
 
         valid_previous = block.previous_hash == self.chain.blocks[-1].current_hash
         return valid_previous and (block.current_hash == block.get_hash())
-    
-    def share_ring(self, ring_node):
-        for node in self.ring:
-            address = 'http://' + ring_node['ip'] + ':' + ring_node['port']
-            requests.post(address + '/get_ring',
-                        data=node)
 
+    def share_ring(self, ring_node):
+        address = 'http://' + ring_node['ip'] + ':' + ring_node['port']
+        requests.post(address + '/get_ring',
+                      data=pickle.dumps(self.ring))
 
     def validate_chain(self, chain):
         """
@@ -156,6 +157,10 @@ class Node:
             if not self.validate_block(block):
                 return False
         return True
+
+    def share_chain(self, ring_node):
+        address = 'http://' + ring_node['ip'] + ':' + ring_node['port']
+        requests.post(address + '/get_chain', data=pickle.dumps(self.chain))
 
 
 """
