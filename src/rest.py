@@ -42,9 +42,18 @@ def get_block():
     new_block = pickle.loads(request.get_data())
 
     if node.validate_block(new_block):
+        # Add block to the current blockchain
         None
     else:
-        return jsonify({'message': "The signature is not authentic"})
+        if node.validate_previous_hash(new_block):
+            return jsonify({'message': "The signature is not authentic. The block has been modified."})
+        else:
+            # Resolve conflict (multiple blockchains/branch)
+            if node.resolve_conflicts(new_block):
+                # Add block to the current blockchain
+                None
+            else:
+                return jsonify({'mesage': "Block rejected."})
 
     return jsonify({'message': "OK"})
 
@@ -114,6 +123,10 @@ def get_chain():
     node.chain = pickle.loads(request.get_data())
 
     return jsonify({'message': "OK"})
+
+@app.route('/send_chain', methods=['GET'])
+def send_chain():
+    return pickle.dumps(node.chain)
 
 
 if __name__ == '__main__':
