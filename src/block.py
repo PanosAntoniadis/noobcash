@@ -2,6 +2,9 @@ import json
 from time import time
 from Crypto.Hash import SHA256
 
+# Capacity defines the maximum number of transactions
+# a block can have.
+CAPACITY = 10
 
 class Block:
     """
@@ -27,6 +30,12 @@ class Block:
     def __str__(self):
         return str(self.__class__) + ": " + str(self.__dict__)
 
+    def __eq__(self, other):
+        """
+        Two blocks are equal if their current_hash is equal
+        """
+        return self.current_hash == other.current_hash
+
     def get_hash(self):
         """
         Computes the current hash of the block.
@@ -49,5 +58,9 @@ class Block:
         """
         Adds a new transaction in the block.
         """
-
         self.transactions.append(transaction)
+
+        if len(self.transactions == CAPACITY):
+            return True
+
+        return False
