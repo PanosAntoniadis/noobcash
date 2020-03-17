@@ -18,9 +18,6 @@ from transaction_output import TransactionOutput
 BOOTSTRAP_IP = '127.0.0.1'
 BOOTSTRAP_PORT = '5000'
 
-# Capacity defines the maximum number of transactions
-# a block can have.
-CAPACITY = 10
 
 app = Flask(__name__)
 # app.config["DEBUG"] = True
@@ -33,17 +30,18 @@ IPAddr = socket.gethostbyname(hostname)
 # Initialize a node.
 node = None
 
-# Initialize a list of current blocks.
-cur_blocks = []
-
-
 @app.route('/get_block', methods=['POST'])
 def get_block():
     new_block = pickle.loads(request.get_data())
 
     if node.validate_block(new_block):
         # Add block to the current blockchain
-        None
+        node.chain.blocks.append(new_block)
+        node.stop_mining = True
+        with node.lock:
+            # Remove the new_block's transactions from the unconfirmed_blocks of the node
+            node.filter_blocks(new_block)
+            node.stop_mining = False
     else:
         if node.validate_previous_hash(new_block):
             return jsonify({'message': "The signature is not authentic. The block has been modified."})
@@ -51,7 +49,12 @@ def get_block():
             # Resolve conflict (multiple blockchains/branch)
             if node.resolve_conflicts(new_block):
                 # Add block to the current blockchain
-                None
+                node.chain.blocks.append(new_block)
+                node.stop_mining = True
+                with node.lock:
+                    # Remove the new_block's transactions from the unconfirmed_blocks of the node
+                    node.filter_blocks(new_block)
+                    node.stop_mining = False
             else:
                 return jsonify({'mesage': "Block rejected."})
 
@@ -63,7 +66,7 @@ def get_transaction():
     new_transaction = pickle.loads(request.get_data())
 
     if node.validate_transaction(new_transaction):
-        None
+        node.add_transaction_to_block(new_transaction)
     else:
         return jsonify({'message': "The signature is not authentic"})
 
@@ -157,7 +160,7 @@ if __name__ == '__main__':
             node.id, BOOTSTRAP_IP, BOOTSTRAP_PORT, node.wallet.public_key, 100 * n)
 
         # Defines the genesis block.
-        gen_block = node.create_new_block(previous_hash=1)
+        gen_block = node.create_new_block()
         gen_block.nonce = 0
 
         print(gen_block.current_hash)
