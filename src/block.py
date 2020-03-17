@@ -22,7 +22,7 @@ class Block:
         self.transactions = []
         self.nonce = None
         self.previous_hash = previous_hash
-        self.current_hash = self.get_hash()
+        self.current_hash = None
 
     def __str__(self):
         return str(self.__class__) + ": " + str(self.__dict__)
@@ -33,6 +33,10 @@ class Block:
         """
 
         # Convert the block object into a JSON string and hash it.
+
+        # Here, we should compute current hash without using the
+        # field self.current_hash.
+
         block_dump = json.dumps(self.__dict__, sort_keys=True)
         return SHA256.new(block_dump.encode()).hexdigest()
 
