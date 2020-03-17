@@ -65,6 +65,12 @@ class Transaction:
     def __str__(self):
         return str(self.__class__) + ": " + str(self.__dict__)
 
+    def __eq__(self, other):
+        """
+        Two transactions are equal if their current_hash is equal
+        """
+        return self.transaction_id == other.transaction_id
+
     def compute_transaction_output(self):
         # Compute the outputs of the transaction, if its not set.
         # - output for the nbcs sent to the receiver.
