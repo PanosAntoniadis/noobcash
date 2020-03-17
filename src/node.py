@@ -129,17 +129,25 @@ class Node:
                 requests.post(address + '/get_block',
                               data=pickle.dumps(block))
 
+    def validate_previous_hash(self,block):
+        """
+        Validates the previous hash of an incoming block.
+
+            The previous hash must be equal to the hash of the previous block in the blockchain.
+        """
+
+        return block.previous_hash == self.chain.blocks[-1].current_hash
+
     def validate_block(self, block):
         """
         Validates an incoming block.
 
             The validation consists of:
             a) Check that current hash is valid.
-            b) Check that the previous hash equals to the hash of the previous block.
+            b) Validate the previous hash.
         """
 
-        valid_previous = block.previous_hash == self.chain.blocks[-1].current_hash
-        return valid_previous and (block.current_hash == block.get_hash())
+        return self.validate_previous_hash(block) and (block.current_hash == block.get_hash())
 
     def share_ring(self, ring_node):
         address = 'http://' + ring_node['ip'] + ':' + ring_node['port']
@@ -162,6 +170,29 @@ class Node:
         address = 'http://' + ring_node['ip'] + ':' + ring_node['port']
         requests.post(address + '/get_chain', data=pickle.dumps(self.chain))
 
+    def resolve_conflicts(self, new_block):
+        """
+        Resolves conflicts of multiple blockchains.
+
+            This function is called when a node receives a block for which it can't validate
+            its previous hash.
+
+            In order to resolve the conflict:
+            a) Broadcast a request to get the current blockchains of the other nodes.
+            b) Validate the given blockchains.
+            c) Keep the longest one.
+        """
+        for ring_node in self.ring:
+            if ring_node['id'] != self.id:
+                address = 'http://' + ring_node['ip'] + ':' + ring_node['port']
+                response = requests.get(address + "/send_blockchain")
+                new_blockchain = pickle.loads(response._content)
+
+                if self.validate_chain(new_blockchain) and len(new_blockchain.blocks) > len(self.chain):
+                    self.chain = new_blockchain
+
+        return self.validate_block(new_block)
+
 
 """
     def valid_proof(.., difficulty=MINING_DIFFICULTY):
@@ -170,7 +201,5 @@ class Node:
     def add_transaction_to_block():
         # if enough transactions  mine
 
-    def resolve_conflicts(self):
-        # resolve correct chain
 
 """
