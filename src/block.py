@@ -36,6 +36,11 @@ class Block:
 
         # Here, we should compute current hash without using the
         # field self.current_hash.
+        block_dict = self.__dict__
+        del block_dict["current_hash"]
+
+        # This is only for testing
+        del block_dict["transactions"]
 
         block_dump = json.dumps(self.__dict__, sort_keys=True)
         return SHA256.new(block_dump.encode()).hexdigest()
