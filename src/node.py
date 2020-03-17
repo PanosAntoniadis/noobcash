@@ -1,9 +1,14 @@
 import requests
 import json
 import pickle
+import itertools
+
+from copy import deepcopy
+from collections import deque
+from threading import Lock
 
 from blockchain import Blockchain
-from block import Block
+from block import Block, CAPACITY
 from wallet import Wallet
 from transaction import Transaction
 from transaction_input import TransactionInput
@@ -31,17 +36,26 @@ class Node:
         self.chain = Blockchain()
         self.wallet = Wallet()
         self.ring = []
+        self.lock = Lock()
+        self.stop_mining = False
+        self.current_block = None
+        self.unconfirmed_blocks = deque()
+
 
     def __str__(self):
         return str(self.__class__) + ": " + str(self.__dict__)
 
-    def create_new_block(self, previous_hash):
+    def create_new_block(self):
         # Creates a new block for the blockchain.
         if len(self.chain.blocks) > 0:
             new_idx = self.chain.blocks[-1].idx + 1
+            previous_hash = self.chain.blocks[-1].current_hash
         else:
             new_idx = 0
-        return Block(new_idx, previous_hash)
+            previous_hash = 1
+
+        self.current_block = Block(new_idx, previous_hash)
+        return self.current_block
 
     def register_node_to_ring(self, id, ip, port, public_key, balance):
         # add this node to the ring, only the bootstrap node can add a node to the ring after checking his wallet and ip:port address
@@ -76,6 +90,25 @@ class Node:
         # Broadcast the transaction to the whole network.
         self.broadcast_transaction(transaction)
 
+    def add_transaction_to_block(self, transaction):
+        """
+        Add transaction to the block and check if its ready to be mined.
+        """
+        if self.current_block.add_transaction(transaction):
+            self.unconfirmed_blocks.append(deepcopy(self.current_block))
+            self.current_block = []
+            while True:
+                with self.lock:
+                    if (self.unconfirmed_blocks):
+                        mined_block = self.unconfirmed_blocks.popleft()
+                        mining_result = self.mine_block(mined_block)
+                        if (mining_result):
+                            return
+                        else:
+                            self.unconfirmed_blocks.appendleft(mined_block)
+                    else:
+                        return
+
     def broadcast_transaction(self, transaction):
         """
         Broadcasts a transaction to the whole network.
@@ -84,8 +117,11 @@ class Node:
         for node in self.ring:
             if node['id'] != self.id:
                 address = 'http://' + node['ip'] + ':' + node['port']
-                requests.post(address + '/get_transaction',
+                response = requests.post(address + '/get_transaction',
                               data=pickle.dumps(transaction))
+                if response.status_code != 200:
+                    return
+        self.add_transaction_to_block(transaction)
 
     def validate_transaction(self, transaction):
         """
@@ -112,11 +148,14 @@ class Node:
         Implements the proof-of-work.
         """
         block.nonce = 0
+        # Update previous hash and index in case of insertions in the chain
+        block.previous_hash = self.chain.blocks[-1].current_hash
+        block.idx = self.chain.blocks[-1].idx + 1
         computed_hash = block.get_hash()
-        while not computed_hash.startswith('0' * MINING_DIFFICULTY):
+        while not computed_hash.startswith('0' * MINING_DIFFICULTY) and not self.stop_mining:
             block.nonce += 1
             computed_hash = block.get_hash()
-        return computed_hash
+        return not self.stop_mining
 
     def broadcast_block(self, block):
         """
@@ -148,6 +187,26 @@ class Node:
         """
 
         return self.validate_previous_hash(block) and (block.current_hash == block.get_hash())
+
+    def filter_blocks(self, mined_block):
+        """
+        Removes from the unconfirmed blocks the transactions that are already inside the mined block.
+        """
+        total_transactions = self.chain.from_iterable([unc_block.transactions for unc_block in self.unconfirmed_blocks])
+        filtered_transactions = [transaction for transaction in total_transactions if (
+            transaction not in mined_block.transactions)]
+        final_idx = 0
+        for i,unc_block in enumerate(self.unconfirmed_blocks):
+            if ((i+1)*CAPACITY <= len(filtered_transactions)):
+                unc_block.transactions = filtered_transactions[i*CAPACITY:(i+1)*CAPACITY]
+            else:
+                unc_block.transactions = filtered_transactions[i*CAPACITY:]
+                final_idx = i
+                break
+        for i in range(len(self.unconfirmed_blocks) - final_idx -1):
+            self.unconfirmed_blocks.pop()
+
+        return
 
     def share_ring(self, ring_node):
         address = 'http://' + ring_node['ip'] + ':' + ring_node['port']
