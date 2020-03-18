@@ -29,23 +29,32 @@ IPAddr = socket.gethostbyname(hostname)
 
 # Initialize a node.
 node = None
+# Number of nodes in the network.
+n = 0
+
 
 @app.route('/get_block', methods=['POST'])
 def get_block():
+    print('Got a new block')
     new_block = pickle.loads(request.get_data())
-
     if node.validate_block(new_block):
+        print('The block is valid')
         # Add block to the current blockchain
         node.chain.blocks.append(new_block)
         node.stop_mining = True
+        print('Mining STOP!!')
         with node.lock:
+            print('Got the lock')
             # Remove the new_block's transactions from the unconfirmed_blocks of the node
             node.filter_blocks(new_block)
             node.stop_mining = False
+            print('Mining START!!')
     else:
+        print('The block is not valid')
         if node.validate_previous_hash(new_block):
             return jsonify({'message': "The signature is not authentic. The block has been modified."})
         else:
+            print('We have a conflict')
             # Resolve conflict (multiple blockchains/branch)
             if node.resolve_conflicts(new_block):
                 # Add block to the current blockchain
@@ -63,10 +72,18 @@ def get_block():
 
 @app.route('/get_transaction', methods=['POST'])
 def get_transaction():
+    print('Got a new transaction')
     new_transaction = pickle.loads(request.get_data())
 
     if node.validate_transaction(new_transaction):
+        print('Transaction is valid')
         node.add_transaction_to_block(new_transaction)
+        print('Transaction added:')
+        print(new_transaction)
+        print('My transactions in wallet:')
+        print(node.wallet.transactions)
+        print('My ring')
+        print(node.ring)
     else:
         return jsonify({'message': "The signature is not authentic"})
 
@@ -95,16 +112,19 @@ def register_node():
 
     # Add node in the list of registered nodes.
     node.register_node_to_ring(
-        id=node_id, ip=node_ip, port=node_port, public_key=node_key, balance=100)
+        id=node_id, ip=node_ip, port=node_port, public_key=node_key, balance=0)
 
     ####### ATTENTION #######
     # On deployment we will create the transactions below when node_id == n-1
 
-    if (node_id == 1):
+    # When all nodes are registered, the bootstrap node sends them:
+    # - the current chain
+    # - the ring
+    # - the first transaction
+    if (node_id == n - 1):
         for ring_node in node.ring:
             if ring_node["id"] != node.id:
                 node.share_chain(ring_node)
-                node.broadcast_block(node.chain.blocks[0])
                 node.share_ring(ring_node)
                 node.create_transaction(
                     receiver=ring_node['public_key'],
@@ -117,15 +137,18 @@ def register_node():
 @app.route('/get_ring', methods=['POST'])
 def get_ring():
     node.ring = pickle.loads(request.get_data())
-
+    # Update the id based on the given ring.
+    for ring_node in node.ring:
+        if ring_node['public_key'] == node.wallet.public_key:
+            node.id = ring_node['id']
     return jsonify({'message': "OK"})
 
 
 @app.route('/get_chain', methods=['POST'])
 def get_chain():
     node.chain = pickle.loads(request.get_data())
-
     return jsonify({'message': "OK"})
+
 
 @app.route('/send_chain', methods=['GET'])
 def send_chain():
@@ -135,8 +158,7 @@ def send_chain():
 if __name__ == '__main__':
     # Define the argument parser.
     parser = ArgumentParser(description='Rest api of noobcash.')
-    parser.add_argument('-p', default=5000,
-                        type=int, help='port to listen on')
+    parser.add_argument('-p', type=int, help='port to listen on')
     parser.add_argument(
         '-n', type=int, help='number of nodes in the blockchain')
     parser.add_argument('-bootstrap', action='store_true',
@@ -155,6 +177,7 @@ if __name__ == '__main__':
         """
         The bootstrap node (id = 0) should create the genesis block.
         """
+
         node.id = 0
         node.register_node_to_ring(
             node.id, BOOTSTRAP_IP, BOOTSTRAP_PORT, node.wallet.public_key, 100 * n)
@@ -163,14 +186,13 @@ if __name__ == '__main__':
         gen_block = node.create_new_block()
         gen_block.nonce = 0
 
-        print(gen_block.current_hash)
-
         # Adds the first and only transaction in the genesis block.
         first_transaction = Transaction(
             sender_address="0", receiver_address=node.wallet.public_key, amount=100 * n, transaction_inputs=None, nbc_sent=100 * n)
         gen_block.add_transaction(first_transaction)
-
         gen_block.current_hash = gen_block.get_hash()
+        node.wallet.transactions.append(first_transaction)
+
         # Add the genesis block in the chain.
         node.chain.blocks.append(gen_block)
         # Listen in the specified address (ip:port)
