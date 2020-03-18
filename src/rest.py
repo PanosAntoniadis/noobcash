@@ -230,6 +230,7 @@ if __name__ == '__main__':
 
         # Add the genesis block in the chain.
         node.chain.blocks.append(gen_block)
+        node.current_block = None
         # Listen in the specified address (ip:port)
         app.run(host=BOOTSTRAP_IP, port=BOOTSTRAP_PORT)
     else:
