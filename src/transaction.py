@@ -50,18 +50,6 @@ class Transaction:
 
         self.signature = signature
 
-    @classmethod
-    def from_dict(cls, transaction_dict, outputs):
-        sender_address = transaction_dict["sender_address"]
-        receiver_address = transaction_dict["receiver_address"]
-        amount = transaction_dict["amount"]
-        transaction_inputs = transaction_dict["transaction_inputs"]
-        nbc_sent = transaction_dict["nbc_sent"]
-        transaction_id = transaction_dict["transaction_id"]
-        signature = transaction_dict["signature"]
-
-        return cls(sender_address, receiver_address, amount, transaction_inputs, nbc_sent, transaction_id, outputs, signature)
-
     def __str__(self):
         return str(self.__class__) + ": " + str(self.__dict__)
 
