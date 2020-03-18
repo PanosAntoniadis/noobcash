@@ -28,12 +28,14 @@ class Transaction:
         signature (int): signature that verifies that the owner of the wallet created the transaction.
     """
 
-    def __init__(self, sender_address, receiver_address, amount, transaction_inputs, nbc_sent, transaction_id=None, transaction_outputs=None, signature=None):
+    def __init__(self, sender_address, sender_id, receiver_address, receiver_id, amount, transaction_inputs, nbc_sent, transaction_id=None, transaction_outputs=None, signature=None):
         # nbc_sent is the amount of money that the sender send for the transaction.
         # Equals the sum of the amounts of the transaction inputs.
 
         self.sender_address = sender_address
+        self.sender_id = sender_id
         self.receiver_address = receiver_address
+        self.receiver_id = receiver_id
         self.amount = amount
         self.transaction_inputs = transaction_inputs
         self.nbc_sent = nbc_sent
@@ -58,6 +60,9 @@ class Transaction:
         Two transactions are equal if their current_hash is equal
         """
         return self.transaction_id == other.transaction_id
+
+    def to_list(self):
+        return [self.sender_id, self.receiver_id, self.amount, self.nbc_sent, self.nbc_sent-self.amount]
 
     def compute_transaction_output(self):
         # Compute the outputs of the transaction, if its not set.
