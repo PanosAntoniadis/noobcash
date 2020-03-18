@@ -41,14 +41,13 @@ class Node:
         self.current_block = None
         self.unconfirmed_blocks = deque()
 
-
     def __str__(self):
         return str(self.__class__) + ": " + str(self.__dict__)
 
     def create_new_block(self):
         # Creates a new block for the blockchain.
         if len(self.chain.blocks) > 0:
-            new_idx = self.chain.blocks[-1].idx + 1
+            new_idx = self.chain.blocks[-1].index + 1
             previous_hash = self.chain.blocks[-1].current_hash
         else:
             new_idx = 0
@@ -81,12 +80,18 @@ class Node:
                 # Exit the loop when UTXOs exceeds the amount of the transaction.
                 break
 
+        if nbc_sent < amount:
+            return False
+
         transaction = Transaction(
             sender_address=self.wallet.public_key, receiver_address=receiver, amount=amount,
             transaction_inputs=inputs, nbc_sent=nbc_sent)
 
+        print('Transaction created:')
+        print(transaction)
         # sign the transaction
         transaction.sign_transaction(self.wallet.private_key)
+        print('Transaction signed:')
         # Broadcast the transaction to the whole network.
         self.broadcast_transaction(transaction)
 
@@ -94,34 +99,66 @@ class Node:
         """
         Add transaction to the block and check if its ready to be mined.
         """
+        print('I will add a valid transaction in the block')
+
+        # If the node is the recipient or the sender of the transaction, it adds the
+        # transaction in its wallet.
+        if (transaction.receiver_address == self.wallet.public_key):
+            self.wallet.transactions.append(transaction)
+        if (transaction.sender_address == self.wallet.public_key):
+            self.wallet.transactions.append(transaction)
+
+        # Update the balance of the recipient and the sender.
+        for ring_node in self.ring:
+            if ring_node['public_key'] == transaction.sender_address:
+                ring_node['balance'] -= transaction.amount
+            if ring_node['public_key'] == transaction.receiver_address:
+                ring_node['balance'] += transaction.amount
+
+        # If the chain contains only the genesis block, a new block
+        # is created. In other cases, the block is created after mining.
+        if len(self.chain.blocks) == 1:
+            self.current_block = self.create_new_block()
+
         if self.current_block.add_transaction(transaction):
+            print('I have to mine')
             self.unconfirmed_blocks.append(deepcopy(self.current_block))
-            self.current_block = []
+            self.current_block = self.create_new_block()
             while True:
                 with self.lock:
+                    print('Got the lock')
                     if (self.unconfirmed_blocks):
                         mined_block = self.unconfirmed_blocks.popleft()
                         mining_result = self.mine_block(mined_block)
                         if (mining_result):
-                            return
+                            print('Mine success!')
+                            self.broadcast_block(mined_block)
                         else:
+                            print('Mine fail, put back the block')
                             self.unconfirmed_blocks.appendleft(mined_block)
                     else:
+                        print('No unconfirmed blocks to mine')
                         return
 
     def broadcast_transaction(self, transaction):
         """
         Broadcasts a transaction to the whole network.
         """
-
+        print('Broadcast the transaction:')
         for node in self.ring:
             if node['id'] != self.id:
                 address = 'http://' + node['ip'] + ':' + node['port']
                 response = requests.post(address + '/get_transaction',
-                              data=pickle.dumps(transaction))
+                                         data=pickle.dumps(transaction))
                 if response.status_code != 200:
                     return
+
+        print('My transaction has been accepted!')
         self.add_transaction_to_block(transaction)
+        print('My transactions in wallet:')
+        print(self.wallet.transactions)
+        print('My ring')
+        print(self.ring)
 
     def validate_transaction(self, transaction):
         """
@@ -139,7 +176,6 @@ class Node:
         for node in self.ring:
             if node['public_key'] == transaction.sender_address:
                 if node['balance'] >= transaction.amount:
-                    node['balance'] -= transaction.amount
                     return True
         return False
 
@@ -147,28 +183,42 @@ class Node:
         """
         Implements the proof-of-work.
         """
+        print('Mining...')
         block.nonce = 0
         # Update previous hash and index in case of insertions in the chain
         block.previous_hash = self.chain.blocks[-1].current_hash
-        block.idx = self.chain.blocks[-1].idx + 1
+        block.index = self.chain.blocks[-1].index + 1
         computed_hash = block.get_hash()
         while not computed_hash.startswith('0' * MINING_DIFFICULTY) and not self.stop_mining:
             block.nonce += 1
             computed_hash = block.get_hash()
+        block.current_hash = computed_hash
+        print('Mine ended')
+
         return not self.stop_mining
 
     def broadcast_block(self, block):
         """
         Broadcasts a validated block in the rest nodes.
         """
-
+        block_accepted = False
+        print('Broadcast the mined block')
+        print(self.ring)
+        print(self.id)
         for node in self.ring:
             if node['id'] != self.id:
                 address = 'http://' + node['ip'] + ':' + node['port']
-                requests.post(address + '/get_block',
-                              data=pickle.dumps(block))
+                response = requests.post(address + '/get_block',
+                                         data=pickle.dumps(block))
+                if response.status_code == 200:
+                    block_accepted = True
 
-    def validate_previous_hash(self,block):
+        if block_accepted:
+            print('My block has been accepted')
+            # If at least of the nodes accepted the block, the block is valid.
+            self.chain.blocks.append(block)
+
+    def validate_previous_hash(self, block):
         """
         Validates the previous hash of an incoming block.
 
@@ -185,25 +235,26 @@ class Node:
             a) Check that current hash is valid.
             b) Validate the previous hash.
         """
-
         return self.validate_previous_hash(block) and (block.current_hash == block.get_hash())
 
     def filter_blocks(self, mined_block):
         """
         Removes from the unconfirmed blocks the transactions that are already inside the mined block.
         """
-        total_transactions = self.chain.from_iterable([unc_block.transactions for unc_block in self.unconfirmed_blocks])
+        total_transactions = itertools.chain.from_iterable(
+            [unc_block.transactions for unc_block in self.unconfirmed_blocks])
         filtered_transactions = [transaction for transaction in total_transactions if (
             transaction not in mined_block.transactions)]
         final_idx = 0
-        for i,unc_block in enumerate(self.unconfirmed_blocks):
-            if ((i+1)*CAPACITY <= len(filtered_transactions)):
-                unc_block.transactions = filtered_transactions[i*CAPACITY:(i+1)*CAPACITY]
+        for i, unc_block in enumerate(self.unconfirmed_blocks):
+            if ((i + 1) * CAPACITY <= len(filtered_transactions)):
+                unc_block.transactions = filtered_transactions[i * CAPACITY:(
+                    i + 1) * CAPACITY]
             else:
-                unc_block.transactions = filtered_transactions[i*CAPACITY:]
+                unc_block.transactions = filtered_transactions[i * CAPACITY:]
                 final_idx = i
                 break
-        for i in range(len(self.unconfirmed_blocks) - final_idx -1):
+        for i in range(len(self.unconfirmed_blocks) - final_idx - 1):
             self.unconfirmed_blocks.pop()
 
         return
@@ -220,7 +271,7 @@ class Node:
             This function is called for every newcoming node in the blockchain.
         """
 
-        for block in chain:
+        for block in chain.blocks:
             if not self.validate_block(block):
                 return False
         return True
@@ -244,21 +295,10 @@ class Node:
         for ring_node in self.ring:
             if ring_node['id'] != self.id:
                 address = 'http://' + ring_node['ip'] + ':' + ring_node['port']
-                response = requests.get(address + "/send_blockchain")
+                response = requests.get(address + "/send_chain")
                 new_blockchain = pickle.loads(response._content)
 
                 if self.validate_chain(new_blockchain) and len(new_blockchain.blocks) > len(self.chain):
                     self.chain = new_blockchain
 
         return self.validate_block(new_block)
-
-
-"""
-    def valid_proof(.., difficulty=MINING_DIFFICULTY):
-        # concencus functions
-
-    def add_transaction_to_block():
-        # if enough transactions  mine
-
-
-"""
