@@ -91,7 +91,7 @@ class Node:
             return False
 
         transaction = Transaction(
-            sender_address=self.wallet.public_key, sender_id=self.id, receiver_address=receiver, receiver_id=receiver_id , amount=amount,
+            sender_address=self.wallet.public_key, sender_id=self.id, receiver_address=receiver, receiver_id=receiver_id, amount=amount,
             transaction_inputs=inputs, nbc_sent=nbc_sent)
 
         print('Transaction created:')
@@ -131,13 +131,16 @@ class Node:
 
         print("Current block before mining")
         print(self.current_block)
+        for tr in self.chain.blocks:
+            print(tr)
         # If the chain contains only the genesis block, a new block
         # is created. In other cases, the block is created after mining.
-        if len(self.chain.blocks) == 1 and self.current_block is None:
+        if self.current_block is None:
             self.current_block = self.create_new_block()
         try:
             print(self.current_block.transactions[0])
-        except: pass
+        except:
+            pass
 
         if self.current_block.add_transaction(transaction):
             print('I have to mine')
