@@ -32,6 +32,9 @@ node = None
 # Number of nodes in the network.
 n = 0
 
+###########################################################
+################## API/API COMMUNICATION ##################
+###########################################################
 
 @app.route('/get_block', methods=['POST'])
 def get_block():
@@ -84,6 +87,8 @@ def get_transaction():
         print(node.wallet.transactions)
         print('My ring')
         print(node.ring)
+        print('My chain')
+        print(node.chain.blocks)
     else:
         return jsonify({'message': "The signature is not authentic"})
 
@@ -128,6 +133,7 @@ def register_node():
                 node.share_ring(ring_node)
                 node.create_transaction(
                     receiver=ring_node['public_key'],
+                    receiver_id =ring_node['id'],
                     amount=100
                 )
 
@@ -154,13 +160,42 @@ def get_chain():
 def send_chain():
     return pickle.dumps(node.chain)
 
+##############################################################
+################## CLIENT/API COMMUNICATION ##################
+##############################################################
+
+@app.route('/api/create_transaction', methods=['POST'])
+def create_transaction():
+    receiver_id = int(request.form.get('receiver'))
+    amount = int(request.form.get('amount'))
+    receiver_public_key = None
+
+    for ring_node in node.ring:
+        if (ring_node['id'] == receiver_id):
+            receiver_public_key = ring_node['public_key']
+    if (receiver_public_key and receiver_id!=node.id):
+        if node.create_transaction(receiver_public_key, receiver_id, amount):
+            return jsonify({'message':'The transaction was successful.', 'balance': node.wallet.get_balance()})
+        else:
+            return jsonify({'message':'Transaction failed. Please try again later.'})
+    else:
+        return jsonify({'message':'Transaction failed. Wrong receiver id.'})
+
+@app.route('/api/get_balance', methods=['GET'])
+def get_balance():
+    return jsonify({'message':'Current balance: '+ str(node.wallet.get_balance())+' NBCs'})
+
+@app.route('/api/get_transactions', methods=['GET'])
+def get_transactions():
+    return pickle.dumps([tr.to_list() for tr in node.chain.blocks[-1].transactions])
+
 
 if __name__ == '__main__':
     # Define the argument parser.
     parser = ArgumentParser(description='Rest api of noobcash.')
-    parser.add_argument('-p', type=int, help='port to listen on')
+    parser.add_argument('-p', type=int, help='port to listen on', required=True)
     parser.add_argument(
-        '-n', type=int, help='number of nodes in the blockchain')
+        '-n', type=int, help='number of nodes in the blockchain', required=True)
     parser.add_argument('-bootstrap', action='store_true',
                         help='set if the current node is the bootstrap')
 
@@ -188,7 +223,7 @@ if __name__ == '__main__':
 
         # Adds the first and only transaction in the genesis block.
         first_transaction = Transaction(
-            sender_address="0", receiver_address=node.wallet.public_key, amount=100 * n, transaction_inputs=None, nbc_sent=100 * n)
+            sender_address="0", sender_id='0', receiver_address=node.wallet.public_key, receiver_id=node.id, amount=100 * n, transaction_inputs=None, nbc_sent=100 * n)
         gen_block.add_transaction(first_transaction)
         gen_block.current_hash = gen_block.get_hash()
         node.wallet.transactions.append(first_transaction)
