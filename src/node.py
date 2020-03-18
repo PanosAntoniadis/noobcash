@@ -62,7 +62,7 @@ class Node:
         self.ring.append(
             {'id': id, 'ip': ip, 'port': port, 'public_key': public_key, 'balance': balance})
 
-    def create_transaction(self, receiver, amount):
+    def create_transaction(self, receiver, receiver_id, amount):
         """
         Creates a transaction.
         """
@@ -70,11 +70,14 @@ class Node:
         # Fill the input of the transaction with UTXOs, by iterating through
         # the previous transactions of the node.
         inputs = []
+        inputs_ids = []
         nbc_sent = 0
         for tr in self.wallet.transactions:
             for output in tr.transaction_outputs:
                 if output.recipient == self.wallet.public_key and output.unspent:
                     inputs.append(TransactionInput(tr.transaction_id))
+                    inputs_ids.append(tr.transaction_id)
+                    output.unspent = False
                     nbc_sent += output.amount
             if nbc_sent >= amount:
                 # Exit the loop when UTXOs exceeds the amount of the transaction.
@@ -84,7 +87,7 @@ class Node:
             return False
 
         transaction = Transaction(
-            sender_address=self.wallet.public_key, receiver_address=receiver, amount=amount,
+            sender_address=self.wallet.public_key, sender_id=self.id, receiver_address=receiver, receiver_id=receiver_id , amount=amount,
             transaction_inputs=inputs, nbc_sent=nbc_sent)
 
         print('Transaction created:')
@@ -93,7 +96,14 @@ class Node:
         transaction.sign_transaction(self.wallet.private_key)
         print('Transaction signed:')
         # Broadcast the transaction to the whole network.
-        self.broadcast_transaction(transaction)
+        if not self.broadcast_transaction(transaction):
+            for tr in self.wallet.transactions:
+                for tr_output in tr.transaction_outputs:
+                    if tr_output.transaction_id in inputs_ids:
+                        tr_output.unspent = True
+            return False
+
+        return True
 
     def add_transaction_to_block(self, transaction):
         """
@@ -117,7 +127,7 @@ class Node:
 
         # If the chain contains only the genesis block, a new block
         # is created. In other cases, the block is created after mining.
-        if len(self.chain.blocks) == 1:
+        if len(self.chain.blocks) == 1 and self.current_block is None:
             self.current_block = self.create_new_block()
 
         if self.current_block.add_transaction(transaction):
@@ -151,7 +161,7 @@ class Node:
                 response = requests.post(address + '/get_transaction',
                                          data=pickle.dumps(transaction))
                 if response.status_code != 200:
-                    return
+                    return False
 
         print('My transaction has been accepted!')
         self.add_transaction_to_block(transaction)
@@ -159,6 +169,7 @@ class Node:
         print(self.wallet.transactions)
         print('My ring')
         print(self.ring)
+        return True
 
     def validate_transaction(self, transaction):
         """
