@@ -1,10 +1,12 @@
 import json
 from time import time
 from Crypto.Hash import SHA256
+import pickle
 
 # Capacity defines the maximum number of transactions
 # a block can have.
-CAPACITY = 10
+CAPACITY = 1
+
 
 class Block:
     """
@@ -45,14 +47,14 @@ class Block:
 
         # Here, we should compute current hash without using the
         # field self.current_hash.
-        block_dict = self.__dict__
-        del block_dict["current_hash"]
+        block_dict = {'index': self.index,
+                      'timestamp': self.timestamp,
+                      'transactions': self.transactions,
+                      'nonce': self.nonce,
+                      'previous_hash': self.previous_hash}
 
-        # This is only for testing
-        del block_dict["transactions"]
-
-        block_dump = json.dumps(self.__dict__, sort_keys=True)
-        return SHA256.new(block_dump.encode()).hexdigest()
+        block_dump = pickle.dumps(block_dict)
+        return SHA256.new(block_dump).hexdigest()
 
     def add_transaction(self, transaction):
         """
@@ -60,7 +62,7 @@ class Block:
         """
         self.transactions.append(transaction)
 
-        if len(self.transactions == CAPACITY):
+        if len(self.transactions) == CAPACITY:
             return True
 
         return False
