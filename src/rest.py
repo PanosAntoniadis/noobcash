@@ -1,15 +1,16 @@
+import ast
+import time
+import socket
+import pickle
 import requests
+import threading
+
+from flask_cors import CORS
 from argparse import ArgumentParser
 from flask import Flask, jsonify, request, render_template
-from flask_cors import CORS
-import socket
-import threading
-import time
-import ast
-import pickle
 
-from block import Block
 from node import Node
+from block import Block
 from transaction import Transaction
 from transaction_output import TransactionOutput
 
@@ -40,6 +41,7 @@ n = 0
 def get_block():
     print('Got a new block')
     new_block = pickle.loads(request.get_data())
+    print(len(node.chain.blocks))
     if node.validate_block(new_block):
         print('The block is valid')
         # Add block to the current blockchain
@@ -55,7 +57,7 @@ def get_block():
     else:
         print('The block is not valid')
         if node.validate_previous_hash(new_block):
-            return jsonify({'message': "The signature is not authentic. The block has been modified."})
+            return jsonify({'message': "The signature is not authentic. The block has been modified."}), 401
         else:
             print('We have a conflict')
             # Resolve conflict (multiple blockchains/branch)
@@ -68,7 +70,7 @@ def get_block():
                     node.filter_blocks(new_block)
                     node.stop_mining = False
             else:
-                return jsonify({'mesage': "Block rejected."})
+                return jsonify({'mesage': "Block rejected."}), 409
 
     return jsonify({'message': "OK"})
 
@@ -83,16 +85,10 @@ def get_transaction():
         node.add_transaction_to_block(new_transaction)
         print('Transaction added:')
         print(new_transaction)
-        print('My transactions in wallet:')
-        print(node.wallet.transactions)
-        print('My ring')
-        print(node.ring)
-        print('My chain')
-        print(node.chain.blocks)
     else:
-        return jsonify({'message': "The signature is not authentic"})
+        return jsonify({'message': "The signature is not authentic"}), 401
 
-    return jsonify({'message': "OK"})
+    return jsonify({'message': "OK"}), 200
 
 
 @app.route('/register_node', methods=['POST'])
@@ -120,8 +116,6 @@ def register_node():
         id=node_id, ip=node_ip, port=node_port, public_key=node_key, balance=0)
 
     ####### ATTENTION #######
-    # On deployment we will create the transactions below when node_id == n-1
-
     # When all nodes are registered, the bootstrap node sends them:
     # - the current chain
     # - the ring
@@ -131,6 +125,8 @@ def register_node():
             if ring_node["id"] != node.id:
                 node.share_chain(ring_node)
                 node.share_ring(ring_node)
+        for ring_node in node.ring:
+            if ring_node["id"] != node.id:
                 node.create_transaction(
                     receiver=ring_node['public_key'],
                     receiver_id =ring_node['id'],
