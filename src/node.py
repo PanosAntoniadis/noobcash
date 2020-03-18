@@ -84,6 +84,10 @@ class Node:
                 break
 
         if nbc_sent < amount:
+            for tr in self.wallet.transactions:
+                for tr_output in tr.transaction_outputs:
+                    if tr_output.transaction_id in inputs_ids:
+                        tr_output.unspent = True
             return False
 
         transaction = Transaction(
@@ -125,10 +129,15 @@ class Node:
             if ring_node['public_key'] == transaction.receiver_address:
                 ring_node['balance'] += transaction.amount
 
+        print("Current block before mining")
+        print(self.current_block)
         # If the chain contains only the genesis block, a new block
         # is created. In other cases, the block is created after mining.
         if len(self.chain.blocks) == 1 and self.current_block is None:
             self.current_block = self.create_new_block()
+        try:
+            print(self.current_block.transactions[0])
+        except: pass
 
         if self.current_block.add_transaction(transaction):
             print('I have to mine')
@@ -143,6 +152,9 @@ class Node:
                         if (mining_result):
                             print('Mine success!')
                             self.broadcast_block(mined_block)
+                            print("Current block after mining")
+                            print(self.current_block)
+                            return
                         else:
                             print('Mine fail, put back the block')
                             self.unconfirmed_blocks.appendleft(mined_block)
