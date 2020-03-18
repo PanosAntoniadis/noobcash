@@ -5,7 +5,7 @@ import itertools
 
 from copy import deepcopy
 from collections import deque
-from threading import Lock
+from threading import Lock,Thread
 
 from blockchain import Blockchain
 from block import Block, CAPACITY
@@ -137,10 +137,6 @@ class Node:
         # is created. In other cases, the block is created after mining.
         if self.current_block is None:
             self.current_block = self.create_new_block()
-        try:
-            print(self.current_block.transactions[0])
-        except:
-            pass
 
         if self.current_block.add_transaction(transaction):
             print('I have to mine')
@@ -154,36 +150,44 @@ class Node:
                         mining_result = self.mine_block(mined_block)
                         if (mining_result):
                             print('Mine success!')
-                            self.broadcast_block(mined_block)
-                            print("Current block after mining")
-                            print(self.current_block)
-                            return
+                            break
                         else:
                             print('Mine fail, put back the block')
                             self.unconfirmed_blocks.appendleft(mined_block)
                     else:
                         print('No unconfirmed blocks to mine')
                         return
+            self.broadcast_block(mined_block)
 
     def broadcast_transaction(self, transaction):
         """
         Broadcasts a transaction to the whole network.
         """
         print('Broadcast the transaction:')
-        for node in self.ring:
+
+        def thread_func(node, responses):
             if node['id'] != self.id:
                 address = 'http://' + node['ip'] + ':' + node['port']
                 response = requests.post(address + '/get_transaction',
                                          data=pickle.dumps(transaction))
-                if response.status_code != 200:
-                    return False
+                responses.append(response.status_code)
+
+        threads = []
+        responses = []
+        for node in self.ring:
+            thread = Thread(target=thread_func,args=(node, responses))
+            threads.append(thread)
+            thread.start()
+
+        for tr in threads:
+            tr.join()
+
+        for res in responses:
+            if res != 200:
+                return False
 
         print('My transaction has been accepted!')
         self.add_transaction_to_block(transaction)
-        print('My transactions in wallet:')
-        print(self.wallet.transactions)
-        print('My ring')
-        print(self.ring)
         return True
 
     def validate_transaction(self, transaction):
@@ -267,8 +271,10 @@ class Node:
         """
         Removes from the unconfirmed blocks the transactions that are already inside the mined block.
         """
-        total_transactions = itertools.chain.from_iterable(
-            [unc_block.transactions for unc_block in self.unconfirmed_blocks])
+        total_transactions = list(itertools.chain.from_iterable(
+            [unc_block.transactions for unc_block in self.unconfirmed_blocks]))
+        if (self.current_block):
+            total_transactions.extend(self.current_block.transactions)
         filtered_transactions = [transaction for transaction in total_transactions if (
             transaction not in mined_block.transactions)]
         final_idx = 0
@@ -286,6 +292,12 @@ class Node:
         return
 
     def share_ring(self, ring_node):
+        """
+        Shares the node's ring (neighbor nodes) to a specific node.
+
+            This function is called for every newcoming node in the blockchain.
+        """
+
         address = 'http://' + ring_node['ip'] + ':' + ring_node['port']
         requests.post(address + '/get_ring',
                       data=pickle.dumps(self.ring))
@@ -294,7 +306,8 @@ class Node:
         """
         Validates all the blocks of a chain.
 
-            This function is called for every newcoming node in the blockchain.
+            This function is called every time a node receives a chain
+            after a conflict.
         """
 
         for block in chain.blocks:
@@ -303,6 +316,12 @@ class Node:
         return True
 
     def share_chain(self, ring_node):
+        """
+        Shares the node's current blockchain to a specific node.
+
+            This function is called whenever there is a conflict and
+            the node is asked to send its chain by the ring_node.
+        """
         address = 'http://' + ring_node['ip'] + ':' + ring_node['port']
         requests.post(address + '/get_chain', data=pickle.dumps(self.chain))
 
@@ -310,11 +329,12 @@ class Node:
         """
         Resolves conflicts of multiple blockchains.
 
-            This function is called when a node receives a block for which it can't validate
-            its previous hash.
+            This function is called when a node receives a block for which it
+            can't validate its previous hash.
 
             In order to resolve the conflict:
-            a) Broadcast a request to get the current blockchains of the other nodes.
+            a) Broadcast a request to get the current blockchains
+            of the other nodes.
             b) Validate the given blockchains.
             c) Keep the longest one.
         """
