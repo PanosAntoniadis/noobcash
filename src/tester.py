@@ -13,36 +13,15 @@ IPAddr = socket.gethostbyname(hostname)
 # For development (to be removed)
 IP = "127.0.0.1"
 
-if __name__ == "__main__":
-    # Define the argument parser.
-    parser = ArgumentParser(
-        description='Sends transactions in the noobcash blockchain given in a text file.')
-    parser.add_argument(
-        '-input', help='text file that contains one transaction per line', required=True)
-
-    parser.add_argument(
-        '-p', type=int, help='port that the api is listen on', required=True)
-
-    # Parse the given arguments.
-    args = parser.parse_args()
-    input_file = args.input
-    port = args.p
-
-    if not os.path.exists(input_file):
-        exit('Wrong input file!')
-
+def start_transactions():
     address = 'http://' + IP + ':' + str(port) + '/api/create_transaction'
-    id = int(input_file.split('/')[-1].rstrip('.txt')[-1])
-
-    input("Press Enter to start reading...")
-
     with open(input_file, 'r') as f:
         for line in f:
             line = line.split()
             receiver_id = int(line[0][2])
             amount = int(line[1])
             transaction = {'receiver': receiver_id, 'amount': amount}
-            print('\nSending %d nbc coins in the node with id %d ...' %
+            print('\nSending %d nbc coins to the node with id %d ...' %
                   (amount, receiver_id))
 
             try:
@@ -52,35 +31,69 @@ if __name__ == "__main__":
             except:
                 exit("\nNode is not active. Try again later.\n")
 
-    address = 'http://' + IP + ':' + \
-        str(port) + '/api/get_my_transactions'
-    response = requests.get(address)
-    data = pickle.loads(response._content)
+    try:
+        address = 'http://' + IP + ':' + \
+            str(port) + '/api/get_my_transactions'
+        response = requests.get(address)
+        data = pickle.loads(response._content)
+    except:
+        exit("\nSomething went wrong while receiving your transactions.\n")
 
     transactions = []
+    balance = 0
     for tr in data:
         if tr[0] == id:
-            transactions.append(['send', tr[2]])
+            transactions.append(['send', tr[2], "Me", tr[1]])
+            balance -= int(tr[2])
         elif tr[1] == id:
-            transactions.append(['receive', tr[2]])
+            transactions.append(['receive', tr[2], tr[1], "Me"])
+            balance += int(tr[2])
         else:
             exit('Wrong transactions!')
 
     table = Texttable()
     table.set_deco(Texttable.HEADER)
     table.set_cols_dtype(['t',  # text
+                          't',  # text
+                          't',  # text
                           't'])  # text
-    table.set_cols_align(["c", "c"])
-    headers = ["Type", "Amount"]
+    table.set_cols_align(["c", "c", "c", "c"])
+    headers = ["Type", "Amount", "From", "To"]
     rows = []
     rows.append(headers)
     rows.extend(transactions)
     table.add_rows(rows)
     print(table.draw() + "\n")
 
-    address = 'http://' + IP + ':' + str(port) + '/api/get_balance'
-    # Use the address below for deployment
-    #address = 'http://' + IPAddr + ':'+ str(PORT) +'/api/get_balance'
-    response = requests.get(address).json()
-    message = response['message']
-    print('\n' + message + '\n')
+    try:
+        address = 'http://' + IP + ':' + str(port) + '/api/get_balance'
+        # Use the address below for deployment
+        #address = 'http://' + IPAddr + ':'+ str(PORT) +'/api/get_balance'
+        response = requests.get(address).json()
+        message = response['message']
+        print('\n' + message + '\n')
+        print("The balance calculated based on the transactions\nin the table above is: " + str(balance) +" NBCs\n")
+    except:
+        exit("\nSomething went wrong while receiving your balance.\n")
+
+if __name__ == "__main__":
+    # Define the argument parser.
+    parser = ArgumentParser(
+        description='Sends transactions given in a text file to the noobcash blockchain.')
+    parser.add_argument(
+        '-input', help='Path to a text file that contains one transaction per line in\nthe following format: id[#] amount, e.g. id3 10', required=True)
+
+    parser.add_argument(
+        '-p', type=int, help='port that the api is listening on', required=True)
+
+    # Parse the given arguments.
+    args = parser.parse_args()
+    input_file = args.input
+    port = args.p
+
+    if not os.path.exists(input_file):
+        exit('Wrong input file!')
+
+    id = int(input_file.split('/')[-1].rstrip('.txt')[-1])
+
+    start_transactions()
