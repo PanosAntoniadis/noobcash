@@ -37,6 +37,7 @@ n = 0
 ################## API/API COMMUNICATION ##################
 ###########################################################
 
+
 @app.route('/get_block', methods=['POST'])
 def get_block():
     print('Got a new block')
@@ -129,7 +130,7 @@ def register_node():
             if ring_node["id"] != node.id:
                 node.create_transaction(
                     receiver=ring_node['public_key'],
-                    receiver_id =ring_node['id'],
+                    receiver_id=ring_node['id'],
                     amount=100
                 )
 
@@ -160,6 +161,7 @@ def send_chain():
 ################## CLIENT/API COMMUNICATION ##################
 ##############################################################
 
+
 @app.route('/api/create_transaction', methods=['POST'])
 def create_transaction():
     receiver_id = int(request.form.get('receiver'))
@@ -169,27 +171,35 @@ def create_transaction():
     for ring_node in node.ring:
         if (ring_node['id'] == receiver_id):
             receiver_public_key = ring_node['public_key']
-    if (receiver_public_key and receiver_id!=node.id):
+    if (receiver_public_key and receiver_id != node.id):
         if node.create_transaction(receiver_public_key, receiver_id, amount):
-            return jsonify({'message':'The transaction was successful.', 'balance': node.wallet.get_balance()})
+            return jsonify({'message': 'The transaction was successful.', 'balance': node.wallet.get_balance()})
         else:
-            return jsonify({'message':'Transaction failed. Please try again later.'})
+            return jsonify({'message': 'Transaction failed. Please try again later.'})
     else:
-        return jsonify({'message':'Transaction failed. Wrong receiver id.'})
+        return jsonify({'message': 'Transaction failed. Wrong receiver id.'})
+
 
 @app.route('/api/get_balance', methods=['GET'])
 def get_balance():
-    return jsonify({'message':'Current balance: '+ str(node.wallet.get_balance())+' NBCs'})
+    return jsonify({'message': 'Current balance: ' + str(node.wallet.get_balance()) + ' NBCs'})
+
 
 @app.route('/api/get_transactions', methods=['GET'])
 def get_transactions():
     return pickle.dumps([tr.to_list() for tr in node.chain.blocks[-1].transactions])
 
 
+@app.route('/api/get_my_transactions', methods=['GET'])
+def get_my_transactions():
+    return pickle.dumps([tr.to_list() for tr in node.wallet.transactions])
+
+
 if __name__ == '__main__':
     # Define the argument parser.
     parser = ArgumentParser(description='Rest api of noobcash.')
-    parser.add_argument('-p', type=int, help='port to listen on', required=True)
+    parser.add_argument(
+        '-p', type=int, help='port to listen on', required=True)
     parser.add_argument(
         '-n', type=int, help='number of nodes in the blockchain', required=True)
     parser.add_argument('-bootstrap', action='store_true',
