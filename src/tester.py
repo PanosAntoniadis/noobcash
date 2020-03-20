@@ -13,6 +13,7 @@ IPAddr = socket.gethostbyname(hostname)
 # For development (to be removed)
 IP = "127.0.0.1"
 
+
 def start_transactions():
     address = 'http://' + IP + ':' + str(port) + '/api/create_transaction'
     with open(input_file, 'r') as f:
@@ -30,6 +31,8 @@ def start_transactions():
                 print("\n" + message + '\n')
             except:
                 exit("\nNode is not active. Try again later.\n")
+
+    input("\nWhen all transactions in the network are over, press Enter to get the final balance ...\n")
 
     try:
         address = 'http://' + IP + ':' + \
@@ -72,28 +75,39 @@ def start_transactions():
         response = requests.get(address).json()
         message = response['message']
         print('\n' + message + '\n')
-        print("The balance calculated based on the transactions\nin the table above is: " + str(balance) +" NBCs\n")
+        print("The balance calculated based on the transactions\nin the table above is: " +
+              str(balance) + " NBCs\n")
     except:
         exit("\nSomething went wrong while receiving your balance.\n")
+
+
+def get_id():
+    address = 'http://' + IP + ':' + str(port) + '/api/get_id'
+    response = requests.get(address).json()
+    message = response['message']
+    return message
+
 
 if __name__ == "__main__":
     # Define the argument parser.
     parser = ArgumentParser(
         description='Sends transactions given in a text file to the noobcash blockchain.')
     parser.add_argument(
-        '-input', help='Path to a text file that contains one transaction per line in\nthe following format: id[#] amount, e.g. id3 10', required=True)
+        '-input', help='Path to the directory of the transactions. Each text file contains one transaction per line in\nthe following format: id[#] amount, e.g. id3 10', required=True)
 
     parser.add_argument(
         '-p', type=int, help='port that the api is listening on', required=True)
 
     # Parse the given arguments.
     args = parser.parse_args()
-    input_file = args.input
+    input_dir = args.input
     port = args.p
 
-    if not os.path.exists(input_file):
-        exit('Wrong input file!')
+    id = get_id()
+    input_file = os.path.join(input_dir, 'transactions' + str(id) + '.txt')
 
-    id = int(input_file.split('/')[-1].rstrip('.txt')[-1])
+    input("\nPress Enter to start the transactions...\n")
+
+    print('Reading %s ...' % input_file)
 
     start_transactions()

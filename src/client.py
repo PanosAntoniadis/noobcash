@@ -47,6 +47,7 @@ def HomeOrExit():
     HomeOrExit_a = prompt(HomeOrExit_q)['option']
     return HomeOrExit_a
 
+
 def client():
     print('Initializing node...\n')
     sleep(2)
@@ -65,7 +66,8 @@ def client():
         os.system('cls||clear')
         if method_a == 'new transaction':
             print("New transaction!")
-            print("----------------------------------------------------------------------")
+            print(
+                "----------------------------------------------------------------------")
             transaction_q = [
                 {
                     'type': 'input',
@@ -80,29 +82,32 @@ def client():
                     'message': 'Amount:',
                     'validate': NumberValidator,
                     'filter': lambda val: int(val)
-            }]
+                }]
             transaction_a = prompt(transaction_q, style=style)
             print("\nConfirmation:")
             confirmation_q = [
                 {
                     'type': 'confirm',
                     'name': 'confirm',
-                    'message': 'Do you want to send '+str(transaction_a["amount"])+' NBCs to node '+ str(transaction_a["receiver"])+ '?',
+                    'message': 'Do you want to send ' + str(transaction_a["amount"]) + ' NBCs to node ' + str(transaction_a["receiver"]) + '?',
                     'default': False
                 }
             ]
             confirmation_a = prompt(confirmation_q)["confirm"]
             if confirmation_a:
-                address = 'http://' + IP + ':' + str(PORT) +'/api/create_transaction'
+                address = 'http://' + IP + ':' + \
+                    str(PORT) + '/api/create_transaction'
                 #address = 'http://' + IPAddr + ':'+ str(PORT) +'/api/create_transaction'
                 try:
-                    response = requests.post(address, data = transaction_a).json()
+                    response = requests.post(
+                        address, data=transaction_a).json()
                     message = response["message"]
-                    print("\n"+message+'\n')
+                    print("\n" + message + '\n')
                     try:
                         balance = response["balance"]
                         print("----------------------------------")
-                        print("Your current balance is: "+ str(balance) +" NBCs")
+                        print("Your current balance is: " +
+                              str(balance) + " NBCs")
                         print("----------------------------------\n")
                     except KeyError:
                         pass
@@ -117,8 +122,10 @@ def client():
 
         elif method_a == 'view last transactions':
             print("Last transactions (last valid block in the blockchain")
-            print("----------------------------------------------------------------------\n")
-            address = 'http://' + IP + ':' + str(PORT) +'/api/get_transactions'
+            print(
+                "----------------------------------------------------------------------\n")
+            address = 'http://' + IP + ':' + \
+                str(PORT) + '/api/get_transactions'
             #address = 'http://' + IPAddr + ':'+ str(PORT) +'/api/get_transactions'
             try:
                 response = requests.get(address)
@@ -126,17 +133,18 @@ def client():
                 table = Texttable()
                 table.set_deco(Texttable.HEADER)
                 table.set_cols_dtype(['t',  # text
-                                        't',  # text
-                                        't',  # text
-                                        't',  # text
-                                        't']) # text
+                                      't',  # text
+                                      't',  # text
+                                      't',  # text
+                                      't'])  # text
                 table.set_cols_align(["c", "c", "c", "c", "c"])
-                headers = ["Sender ID", "Receiver ID", "Amount", "NBC sent", "Change"]
+                headers = ["Sender ID", "Receiver ID",
+                           "Amount", "NBC sent", "Change"]
                 rows = []
                 rows.append(headers)
                 rows.extend(data)
                 table.add_rows(rows)
-                print(table.draw()+ "\n")
+                print(table.draw() + "\n")
             except:
                 print("Node is not active. Try again later.\n")
             if HomeOrExit() == 'exit':
@@ -145,14 +153,15 @@ def client():
                 os.system('cls||clear')
         elif method_a == 'show balance':
             print("Your balance")
-            print("----------------------------------------------------------------------\n")
-            address = 'http://' + IP + ':' + str(PORT) +'/api/get_balance'
+            print(
+                "----------------------------------------------------------------------\n")
+            address = 'http://' + IP + ':' + str(PORT) + '/api/get_balance'
             # Use the address below for deployment
             #address = 'http://' + IPAddr + ':'+ str(PORT) +'/api/get_balance'
             try:
                 response = requests.get(address).json()
                 message = response['message']
-                print(message +'\n')
+                print(message + '\n')
             except:
                 print("Node is not active. Try again later.\n")
             if HomeOrExit() == 'exit':
@@ -161,12 +170,15 @@ def client():
                 os.system('cls||clear')
         elif method_a == 'help':
             print("Help")
-            print("----------------------------------------------------------------------")
+            print(
+                "----------------------------------------------------------------------")
             print("You have the following options:")
             print("- New transaction: Creates a new transaction. You are asked for the")
-            print("  id of the node to which you want to send the NBCs and the amount of NBCs")
+            print(
+                "  id of the node to which you want to send the NBCs and the amount of NBCs")
             print("  to send.")
-            print("- View last transactions: Prints the transactions of the last validated")
+            print(
+                "- View last transactions: Prints the transactions of the last validated")
             print("  block of the noobcash blockchain.")
             print("- Show balance: Prints the current balance of your wallet.")
             print("- Help: Prints usage information about the options.\n")
@@ -178,6 +190,7 @@ def client():
 
         else:
             break
+
 
 if __name__ == "__main__":
     # Define the argument parser.
