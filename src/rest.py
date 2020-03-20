@@ -195,6 +195,11 @@ def get_my_transactions():
     return pickle.dumps([tr.to_list() for tr in node.wallet.transactions])
 
 
+@app.route('/api/get_id', methods=['GET'])
+def get_id():
+    return jsonify({'message': node.id})
+
+
 if __name__ == '__main__':
     # Define the argument parser.
     parser = ArgumentParser(description='Rest api of noobcash.')
