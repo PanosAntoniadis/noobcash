@@ -8,4 +8,5 @@ class TransactionInput:
     """
 
     def __init__(self, previous_output_id):
+        """Inits a TransactionInput."""
         self.previous_output_id = previous_output_id

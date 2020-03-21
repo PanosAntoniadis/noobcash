@@ -10,7 +10,7 @@ from argparse import ArgumentParser
 from texttable import Texttable
 from time import sleep
 
-# Getting the IP address of the device
+# Get the IP address of the device
 if config.LOCAL:
     IPAddr = '127.0.0.1'
 else:
@@ -192,10 +192,12 @@ def client():
 if __name__ == "__main__":
     # Define the argument parser.
     parser = ArgumentParser(description='CLI client of noobcash.')
-    parser.add_argument('-p', type=int, help='port to listen on')
+    parser.add_argument(
+        '-p', type=int, help='port to listen on', required=True)
 
     # Parse the given arguments.
     args = parser.parse_args()
     PORT = args.p
 
+    # Call the client function.
     client()

@@ -1,3 +1,4 @@
+import config
 import os
 import requests
 import socket
@@ -8,9 +9,8 @@ from argparse import ArgumentParser
 from texttable import Texttable
 
 sys.path.insert(0, '../src')
-import config
 
-# Getting the IP address of the device
+# Get the IP address of the device
 if config.LOCAL:
     IPAddr = '127.0.0.1'
 else:
@@ -95,7 +95,7 @@ def get_id():
 if __name__ == "__main__":
     # Define the argument parser.
     parser = ArgumentParser(
-        description='Sends transactions given in a text file to the noobcash blockchain.')
+        description='Sends transactions in the noobcash blockchain given a text file.')
     parser.add_argument(
         '-input', help='Path to the directory of the transactions. Each text file contains one transaction per line in\nthe following format: id[#] amount, e.g. id3 10', required=True)
 
@@ -107,10 +107,10 @@ if __name__ == "__main__":
     input_dir = args.input
     port = args.p
 
+    input("\nPress Enter to start the transactions...\n")
+
     id = get_id()
     input_file = os.path.join(input_dir, 'transactions' + str(id) + '.txt')
-
-    input("\nPress Enter to start the transactions...\n")
 
     print('Reading %s ...' % input_file)
 

@@ -17,16 +17,10 @@ from transaction_output import TransactionOutput
 
 # All nodes are aware of the ip and the port of the bootstrap
 # node, in order to communicate with it when entering the network.
-
 BOOTSTRAP_IP = config.BOOTSTRAP_IP
 BOOTSTRAP_PORT = config.BOOTSTRAP_PORT
 
-
-app = Flask(__name__)
-# app.config["DEBUG"] = True
-CORS(app)
-
-# Getting the IP address of the device
+# Get the IP address of the device.
 if config.LOCAL:
     IPAddr = BOOTSTRAP_IP
 else:
@@ -38,171 +32,8 @@ node = None
 # Number of nodes in the network.
 n = 0
 
-###########################################################
-################## API/API COMMUNICATION ##################
-###########################################################
-
-
-@app.route('/get_block', methods=['POST'])
-def get_block():
-    print('Got a new block')
-    new_block = pickle.loads(request.get_data())
-    print(len(node.chain.blocks))
-    if node.validate_block(new_block):
-        print('The block is valid')
-        # Add block to the current blockchain
-        node.chain.blocks.append(new_block)
-        node.stop_mining = True
-        print('Mining STOP!!')
-        with node.lock:
-            print('Got the lock')
-            # Remove the new_block's transactions from the unconfirmed_blocks of the node
-            node.filter_blocks(new_block)
-            node.stop_mining = False
-            print('Mining START!!')
-    else:
-        print('The block is not valid')
-        if node.validate_previous_hash(new_block):
-            return jsonify({'message': "The signature is not authentic. The block has been modified."}), 401
-        else:
-            print('We have a conflict')
-            # Resolve conflict (multiple blockchains/branch)
-            if node.resolve_conflicts(new_block):
-                # Add block to the current blockchain
-                node.chain.blocks.append(new_block)
-                node.stop_mining = True
-                with node.lock:
-                    # Remove the new_block's transactions from the unconfirmed_blocks of the node
-                    node.filter_blocks(new_block)
-                    node.stop_mining = False
-            else:
-                return jsonify({'mesage': "Block rejected."}), 409
-
-    return jsonify({'message': "OK"})
-
-
-@app.route('/get_transaction', methods=['POST'])
-def get_transaction():
-    print('Got a new transaction')
-    new_transaction = pickle.loads(request.get_data())
-
-    if node.validate_transaction(new_transaction):
-        print('Transaction is valid')
-        node.add_transaction_to_block(new_transaction)
-        print('Transaction added:')
-        print(new_transaction)
-    else:
-        return jsonify({'message': "The signature is not authentic"}), 401
-
-    return jsonify({'message': "OK"}), 200
-
-
-@app.route('/register_node', methods=['POST'])
-def register_node():
-    '''Endpoint that registers a new node in the network.
-        It is called only in the bootstrap node.
-
-        Input:
-            public_key: the public key of node to enter.
-            ip: the ip of the node to enter.
-            port: the port of the node to enter.
-
-        Returns:
-            id: the id that the new node is assigned.
-    '''
-
-    # Get the argument
-    node_key = request.form.get('public_key')
-    node_ip = request.form.get('ip')
-    node_port = request.form.get('port')
-    node_id = len(node.ring)
-
-    # Add node in the list of registered nodes.
-    node.register_node_to_ring(
-        id=node_id, ip=node_ip, port=node_port, public_key=node_key, balance=0)
-
-    ####### ATTENTION #######
-    # When all nodes are registered, the bootstrap node sends them:
-    # - the current chain
-    # - the ring
-    # - the first transaction
-    if (node_id == n - 1):
-        for ring_node in node.ring:
-            if ring_node["id"] != node.id:
-                node.share_chain(ring_node)
-                node.share_ring(ring_node)
-        for ring_node in node.ring:
-            if ring_node["id"] != node.id:
-                node.create_transaction(
-                    receiver=ring_node['public_key'],
-                    receiver_id=ring_node['id'],
-                    amount=100
-                )
-
-    return jsonify({'id': node_id})
-
-
-@app.route('/get_ring', methods=['POST'])
-def get_ring():
-    node.ring = pickle.loads(request.get_data())
-    # Update the id based on the given ring.
-    for ring_node in node.ring:
-        if ring_node['public_key'] == node.wallet.public_key:
-            node.id = ring_node['id']
-    return jsonify({'message': "OK"})
-
-
-@app.route('/get_chain', methods=['POST'])
-def get_chain():
-    node.chain = pickle.loads(request.get_data())
-    return jsonify({'message': "OK"})
-
-
-@app.route('/send_chain', methods=['GET'])
-def send_chain():
-    return pickle.dumps(node.chain)
-
-##############################################################
-################## CLIENT/API COMMUNICATION ##################
-##############################################################
-
-
-@app.route('/api/create_transaction', methods=['POST'])
-def create_transaction():
-    receiver_id = int(request.form.get('receiver'))
-    amount = int(request.form.get('amount'))
-    receiver_public_key = None
-
-    for ring_node in node.ring:
-        if (ring_node['id'] == receiver_id):
-            receiver_public_key = ring_node['public_key']
-    if (receiver_public_key and receiver_id != node.id):
-        if node.create_transaction(receiver_public_key, receiver_id, amount):
-            return jsonify({'message': 'The transaction was successful.', 'balance': node.wallet.get_balance()})
-        else:
-            return jsonify({'message': 'Transaction failed. Please try again later.'})
-    else:
-        return jsonify({'message': 'Transaction failed. Wrong receiver id.'})
-
-
-@app.route('/api/get_balance', methods=['GET'])
-def get_balance():
-    return jsonify({'message': 'Current balance: ' + str(node.wallet.get_balance()) + ' NBCs'})
-
-
-@app.route('/api/get_transactions', methods=['GET'])
-def get_transactions():
-    return pickle.dumps([tr.to_list() for tr in node.chain.blocks[-1].transactions])
-
-
-@app.route('/api/get_my_transactions', methods=['GET'])
-def get_my_transactions():
-    return pickle.dumps([tr.to_list() for tr in node.wallet.transactions])
-
-
-@app.route('/api/get_id', methods=['GET'])
-def get_id():
-    return jsonify({'message': node.id})
+app = Flask(__name__)
+CORS(app)
 
 
 if __name__ == '__main__':
@@ -226,7 +57,12 @@ if __name__ == '__main__':
 
     if (is_bootstrap):
         """
-        The bootstrap node (id = 0) should create the genesis block.
+        The bootstrap node (id = 0):
+            - registers itself in the ring.
+            - creates the genesis block.
+            - creates the first transaction and adds it in the genesis block.
+            - adds the genesis block in the blockchain (no validation).
+            - starts listening in the desired port.
         """
 
         node.id = 0
@@ -247,11 +83,14 @@ if __name__ == '__main__':
         # Add the genesis block in the chain.
         node.chain.blocks.append(gen_block)
         node.current_block = None
+
         # Listen in the specified address (ip:port)
         app.run(host=BOOTSTRAP_IP, port=BOOTSTRAP_PORT)
     else:
         """
-        The rest nodes communicate with the bootstrap node.
+        The rest nodes (id = 1, .., n-1):
+            - communicate with the bootstrap node in order to register them.
+            - starts listening in the desired port.
         """
 
         register_address = 'http://' + BOOTSTRAP_IP + \
