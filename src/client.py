@@ -2,6 +2,7 @@ import requests
 import socket
 import pickle
 import os
+import config
 
 from PyInquirer import style_from_dict, Token, prompt
 from PyInquirer import Validator, ValidationError
@@ -10,11 +11,11 @@ from texttable import Texttable
 from time import sleep
 
 # Getting the IP address of the device
-hostname = socket.gethostname()
-IPAddr = socket.gethostbyname(hostname)
-
-# For development (to be removed)
-IP = "127.0.0.1"
+if config.LOCAL:
+    IPAddr = '127.0.0.1'
+else:
+    hostname = socket.gethostname()
+    IPAddr = socket.gethostbyname(hostname)
 
 style = style_from_dict({
     Token.QuestionMark: '#E91E63 bold',
@@ -95,9 +96,8 @@ def client():
             ]
             confirmation_a = prompt(confirmation_q)["confirm"]
             if confirmation_a:
-                address = 'http://' + IP + ':' + \
+                address = 'http://' + IPAddr + ':' + \
                     str(PORT) + '/api/create_transaction'
-                #address = 'http://' + IPAddr + ':'+ str(PORT) +'/api/create_transaction'
                 try:
                     response = requests.post(
                         address, data=transaction_a).json()
@@ -124,9 +124,8 @@ def client():
             print("Last transactions (last valid block in the blockchain")
             print(
                 "----------------------------------------------------------------------\n")
-            address = 'http://' + IP + ':' + \
+            address = 'http://' + IPAddr + ':' + \
                 str(PORT) + '/api/get_transactions'
-            #address = 'http://' + IPAddr + ':'+ str(PORT) +'/api/get_transactions'
             try:
                 response = requests.get(address)
                 data = pickle.loads(response._content)
@@ -155,9 +154,7 @@ def client():
             print("Your balance")
             print(
                 "----------------------------------------------------------------------\n")
-            address = 'http://' + IP + ':' + str(PORT) + '/api/get_balance'
-            # Use the address below for deployment
-            #address = 'http://' + IPAddr + ':'+ str(PORT) +'/api/get_balance'
+            address = 'http://' + IPAddr + ':' + str(PORT) + '/api/get_balance'
             try:
                 response = requests.get(address).json()
                 message = response['message']

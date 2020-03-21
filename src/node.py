@@ -5,7 +5,7 @@ import itertools
 
 from copy import deepcopy
 from collections import deque
-from threading import Lock,Thread
+from threading import Lock, Thread
 
 from blockchain import Blockchain
 from block import Block, CAPACITY
@@ -175,7 +175,7 @@ class Node:
         threads = []
         responses = []
         for node in self.ring:
-            thread = Thread(target=thread_func,args=(node, responses))
+            thread = Thread(target=thread_func, args=(node, responses))
             threads.append(thread)
             thread.start()
 
