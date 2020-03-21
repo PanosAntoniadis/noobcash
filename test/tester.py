@@ -6,6 +6,9 @@ import pickle
 from argparse import ArgumentParser
 from texttable import Texttable
 
+sys.path.insert(0, '../src')
+import config
+
 # Getting the IP address of the device
 if config.LOCAL:
     IPAddr = '127.0.0.1'
