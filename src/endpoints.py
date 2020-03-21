@@ -1,9 +1,33 @@
+import requests
+import pickle
+
+from flask import Blueprint, jsonify, request, render_template
+
+from node import Node
+from block import Block
+from transaction import Transaction
+from transaction_output import TransactionOutput
+from node import Node
+
+###########################################################
+################## INITIALIZATIONS ########################
+###########################################################
+
+
+# Define the node object of the current node.
+node = Node()
+# Define the number of nodes in the network.
+n = 0
+# Define a Blueprint for the api endpoints.
+rest_api = Blueprint('rest_api', __name__)
+
+
 ###########################################################
 ################## API/API COMMUNICATION ##################
 ###########################################################
 
 
-@app.route('/get_block', methods=['POST'])
+@rest_api.route('/get_block', methods=['POST'])
 def get_block():
     '''Endpoint that gets an incoming block, validates it and adds it in the
         blockchain.
@@ -47,7 +71,7 @@ def get_block():
     return jsonify({'message': "OK"})
 
 
-@app.route('/get_transaction', methods=['POST'])
+@rest_api.route('/get_transaction', methods=['POST'])
 def get_transaction():
     '''Endpoint that gets an incoming transaction, validates it and adds it in the
         block.
@@ -68,7 +92,7 @@ def get_transaction():
     return jsonify({'message': "OK"}), 200
 
 
-@app.route('/register_node', methods=['POST'])
+@rest_api.route('/register_node', methods=['POST'])
 def register_node():
     '''Endpoint that registers a new node in the network.
         It is called only in the bootstrap node.
@@ -112,7 +136,7 @@ def register_node():
     return jsonify({'id': node_id})
 
 
-@app.route('/get_ring', methods=['POST'])
+@rest_api.route('/get_ring', methods=['POST'])
 def get_ring():
     '''Endpoint that gets a ring (information about other nodes).
 
@@ -129,7 +153,7 @@ def get_ring():
     return jsonify({'message': "OK"})
 
 
-@app.route('/get_chain', methods=['POST'])
+@rest_api.route('/get_chain', methods=['POST'])
 def get_chain():
     '''Endpoint that gets a blockchain.
 
@@ -142,7 +166,7 @@ def get_chain():
     return jsonify({'message': "OK"})
 
 
-@app.route('/send_chain', methods=['GET'])
+@rest_api.route('/send_chain', methods=['GET'])
 def send_chain():
     '''Endpoint that sends a blockchain.
 
@@ -157,7 +181,7 @@ def send_chain():
 ##############################################################
 
 
-@app.route('/api/create_transaction', methods=['POST'])
+@rest_api.route('/api/create_transaction', methods=['POST'])
 def create_transaction():
     '''Endpoint that creates a new transaction.
 
@@ -186,7 +210,7 @@ def create_transaction():
         return jsonify({'message': 'Transaction failed. Wrong receiver id.'})
 
 
-@app.route('/api/get_balance', methods=['GET'])
+@rest_api.route('/api/get_balance', methods=['GET'])
 def get_balance():
     '''Endpoint that returns the current balance of the node.
 
@@ -196,7 +220,7 @@ def get_balance():
     return jsonify({'message': 'Current balance: ' + str(node.wallet.get_balance()) + ' NBCs'})
 
 
-@app.route('/api/get_transactions', methods=['GET'])
+@rest_api.route('/api/get_transactions', methods=['GET'])
 def get_transactions():
     '''Endpoint that returns the transactions of the last confirmed block.
 
@@ -206,7 +230,7 @@ def get_transactions():
     return pickle.dumps([tr.to_list() for tr in node.chain.blocks[-1].transactions])
 
 
-@app.route('/api/get_my_transactions', methods=['GET'])
+@rest_api.route('/api/get_my_transactions', methods=['GET'])
 def get_my_transactions():
     '''Endpoint that returns all the transactions of a node (as a sender of receiver).
 
@@ -216,7 +240,7 @@ def get_my_transactions():
     return pickle.dumps([tr.to_list() for tr in node.wallet.transactions])
 
 
-@app.route('/api/get_id', methods=['GET'])
+@rest_api.route('/api/get_id', methods=['GET'])
 def get_id():
     '''Endpoint that returns the id of the node.
 

@@ -1,19 +1,18 @@
-import ast
 import time
 import socket
-import pickle
 import requests
 import threading
+
 import config
+import endpoints
 
 from flask_cors import CORS
 from argparse import ArgumentParser
 from flask import Flask, jsonify, request, render_template
 
-from node import Node
 from block import Block
 from transaction import Transaction
-from transaction_output import TransactionOutput
+from endpoints import node, rest_api
 
 # All nodes are aware of the ip and the port of the bootstrap
 # node, in order to communicate with it when entering the network.
@@ -27,12 +26,9 @@ else:
     hostname = socket.gethostname()
     IPAddr = socket.gethostbyname(hostname)
 
-# Initialize a node.
-node = None
-# Number of nodes in the network.
-n = 0
-
+# Define the flask environment and register the blueprint with the endpoints.
 app = Flask(__name__)
+app.register_blueprint(rest_api)
 CORS(app)
 
 
@@ -49,11 +45,8 @@ if __name__ == '__main__':
     # Parse the given arguments.
     args = parser.parse_args()
     port = args.p
-    n = args.n
+    endpoints.n = args.n
     is_bootstrap = args.bootstrap
-
-    # Initialize the node object of the current node.
-    node = Node()
 
     if (is_bootstrap):
         """
@@ -67,7 +60,7 @@ if __name__ == '__main__':
 
         node.id = 0
         node.register_node_to_ring(
-            node.id, BOOTSTRAP_IP, BOOTSTRAP_PORT, node.wallet.public_key, 100 * n)
+            node.id, BOOTSTRAP_IP, BOOTSTRAP_PORT, node.wallet.public_key, 100 * endpoints.n)
 
         # Defines the genesis block.
         gen_block = node.create_new_block()
@@ -75,7 +68,7 @@ if __name__ == '__main__':
 
         # Adds the first and only transaction in the genesis block.
         first_transaction = Transaction(
-            sender_address="0", sender_id='0', receiver_address=node.wallet.public_key, receiver_id=node.id, amount=100 * n, transaction_inputs=None, nbc_sent=100 * n)
+            sender_address="0", sender_id='0', receiver_address=node.wallet.public_key, receiver_id=node.id, amount=100 * endpoints.n, transaction_inputs=None, nbc_sent=100 * endpoints.n)
         gen_block.add_transaction(first_transaction)
         gen_block.current_hash = gen_block.get_hash()
         node.wallet.transactions.append(first_transaction)
