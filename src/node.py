@@ -337,10 +337,16 @@ class Node:
         This function is called every time a node receives a chain after
         a conflict.
         """
-
-        for block in chain.blocks:
-            if not self.validate_block(block):
-                return False
+        blocks = chain.blocks
+        for i in range(len(blocks)):
+            if i==0:
+                if blocks[i].previous_hash != 1 or blocks[i].current_hash != blocks[i].get_hash(): 
+                    return False
+            else:
+                valid_current_hash = blocks[i].current_hash == blocks[i].get_hash()
+                valid_previous_hash = blocks[i].previous_hash == blocks[i-1].current_hash
+                if not valid_current_hash or not valid_previous_hash:
+                    return False
         return True
 
     def share_chain(self, ring_node):
