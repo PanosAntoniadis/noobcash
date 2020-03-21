@@ -7,11 +7,11 @@ from argparse import ArgumentParser
 from texttable import Texttable
 
 # Getting the IP address of the device
-hostname = socket.gethostname()
-IPAddr = socket.gethostbyname(hostname)
-
-# For development (to be removed)
-IP = "127.0.0.1"
+if config.LOCAL:
+    IPAddr = '127.0.0.1'
+else:
+    hostname = socket.gethostname()
+    IPAddr = socket.gethostbyname(hostname)
 
 
 def start_transactions():
