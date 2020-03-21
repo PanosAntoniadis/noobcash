@@ -4,6 +4,7 @@ import socket
 import pickle
 import requests
 import threading
+import config
 
 from flask_cors import CORS
 from argparse import ArgumentParser
@@ -16,8 +17,9 @@ from transaction_output import TransactionOutput
 
 # All nodes are aware of the ip and the port of the bootstrap
 # node, in order to communicate with it when entering the network.
-BOOTSTRAP_IP = '127.0.0.1'
-BOOTSTRAP_PORT = '5000'
+
+BOOTSTRAP_IP = config.BOOTSTRAP_IP
+BOOTSTRAP_PORT = config.BOOTSTRAP_PORT
 
 
 app = Flask(__name__)
@@ -252,16 +254,12 @@ if __name__ == '__main__':
         register_address = 'http://' + BOOTSTRAP_IP + \
             ':' + BOOTSTRAP_PORT + '/register_node'
 
-        ####### ATTENTION #######
-        # When the system run in oceanos the ip will
-        # be the IPAddr of the device.
-
         def thread_function():
             time.sleep(2)
             response = requests.post(
                 register_address,
                 data={'public_key': node.wallet.public_key,
-                      'ip': BOOTSTRAP_IP, 'port': port}
+                      'ip': IPAddr, 'port': port}
             )
 
             if response.status_code == 200:
@@ -273,4 +271,4 @@ if __name__ == '__main__':
         req.start()
 
         # Listen in the specified address (ip:port)
-        app.run(host=BOOTSTRAP_IP, port=port)
+        app.run(host=IPAddr, port=port)
