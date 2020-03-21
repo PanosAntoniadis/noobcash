@@ -3,7 +3,7 @@ import requests
 import socket
 import pickle
 import sys
- 
+
 from argparse import ArgumentParser
 from texttable import Texttable
 
@@ -19,7 +19,7 @@ else:
 
 
 def start_transactions():
-    address = 'http://' + IP + ':' + str(port) + '/api/create_transaction'
+    address = 'http://' + IPAddr + ':' + str(port) + '/api/create_transaction'
     with open(input_file, 'r') as f:
         for line in f:
             line = line.split()
@@ -39,7 +39,7 @@ def start_transactions():
     input("\nWhen all transactions in the network are over, press Enter to get the final balance ...\n")
 
     try:
-        address = 'http://' + IP + ':' + \
+        address = 'http://' + IPAddr + ':' + \
             str(port) + '/api/get_my_transactions'
         response = requests.get(address)
         data = pickle.loads(response._content)
@@ -73,7 +73,7 @@ def start_transactions():
     print(table.draw() + "\n")
 
     try:
-        address = 'http://' + IP + ':' + str(port) + '/api/get_balance'
+        address = 'http://' + IPAddr + ':' + str(port) + '/api/get_balance'
         # Use the address below for deployment
         #address = 'http://' + IPAddr + ':'+ str(PORT) +'/api/get_balance'
         response = requests.get(address).json()
@@ -86,7 +86,7 @@ def start_transactions():
 
 
 def get_id():
-    address = 'http://' + IP + ':' + str(port) + '/api/get_id'
+    address = 'http://' + IPAddr + ':' + str(port) + '/api/get_id'
     response = requests.get(address).json()
     message = response['message']
     return message
