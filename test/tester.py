@@ -3,6 +3,7 @@ import requests
 import socket
 import pickle
 import sys
+import time
 
 from argparse import ArgumentParser
 from texttable import Texttable
@@ -18,25 +19,34 @@ else:
     hostname = socket.gethostname()
     IPAddr = socket.gethostbyname(hostname)
 
+total_time = 0
+
 
 def start_transactions():
+    """This function sends the transactions of the text file"""
     address = 'http://' + IPAddr + ':' + str(port) + '/api/create_transaction'
     with open(input_file, 'r') as f:
         for line in f:
+            # Get the info of the transaction.
             line = line.split()
             receiver_id = int(line[0][2])
             amount = int(line[1])
             transaction = {'receiver': receiver_id, 'amount': amount}
+
             print('\nSending %d nbc coins to the node with id %d ...' %
                   (amount, receiver_id))
 
+            # Send the current transaction.
             try:
+                start_time = time.time()
                 response = requests.post(address, data=transaction).json()
+                total_time += time.time() - start_time
                 message = response["message"]
                 print("\n" + message + '\n')
             except:
                 exit("\nNode is not active. Try again later.\n")
 
+    print('Total time: %f\n' %total_time)
     input("\nWhen all transactions in the network are over, press Enter to get the final balance ...\n")
 
     try:
@@ -75,8 +85,6 @@ def start_transactions():
 
     try:
         address = 'http://' + IPAddr + ':' + str(port) + '/api/get_balance'
-        # Use the address below for deployment
-        #address = 'http://' + IPAddr + ':'+ str(PORT) +'/api/get_balance'
         response = requests.get(address).json()
         message = response['message']
         print('\n' + message + '\n')
@@ -96,20 +104,21 @@ def get_id():
 if __name__ == "__main__":
     # Define the argument parser.
     parser = ArgumentParser(
-        description='Sends transactions in the noobcash blockchain given a text file.')
+        description='Sends transactions in the noobcash blockchain given from a text file.')
     parser.add_argument(
         '-input', help='Path to the directory of the transactions. Each text file contains one transaction per line in\nthe following format: id[#] amount, e.g. id3 10', required=True)
 
     parser.add_argument(
-        '-p', type=int, help='port that the api is listening on', required=True)
+        '-p', type=int, help='Port that the api is listening on', required=True)
 
     # Parse the given arguments.
     args = parser.parse_args()
     input_dir = args.input
     port = args.p
 
-    input("\nPress Enter to start the transactions...\n")
+    input("\n Press Enter to start the transactions...\n")
 
+    # Find the corresponding transaction file.
     id = get_id()
     input_file = os.path.join(input_dir, 'transactions' + str(id) + '.txt')
 
