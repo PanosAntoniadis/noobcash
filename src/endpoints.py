@@ -70,11 +70,9 @@ def get_block():
 
     return jsonify({'message': "OK"})
 
-
-@rest_api.route('/get_transaction', methods=['POST'])
-def get_transaction():
-    '''Endpoint that gets an incoming transaction, validates it and adds it in the
-        block.
+@rest_api.route('/validate_transaction', methods=['POST'])
+def validate_transaction():
+    '''Endpoint that gets an incoming transaction and valdiates it.
 
         Input:
             new_transaction: the incoming transaction in pickle format.
@@ -84,10 +82,24 @@ def get_transaction():
 
     new_transaction = pickle.loads(request.get_data())
     if node.validate_transaction(new_transaction):
-        # If the transaction is valid, add it in the block.
-        node.add_transaction_to_block(new_transaction)
+        return jsonify({'message': "OK"}), 200
     else:
         return jsonify({'message': "The signature is not authentic"}), 401
+
+@rest_api.route('/get_transaction', methods=['POST'])
+def get_transaction():
+    '''Endpoint that gets an incoming transaction and adds it in the
+        block.
+
+        Input:
+            new_transaction: the incoming transaction in pickle format.
+        Returns:
+            message: the outcome of the procedure.
+    '''
+
+    new_transaction = pickle.loads(request.get_data())
+    # If the transaction is valid, add it in the block.
+    node.add_transaction_to_block(new_transaction)
 
     return jsonify({'message': "OK"}), 200
 

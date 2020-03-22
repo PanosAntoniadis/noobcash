@@ -191,17 +191,17 @@ class Node:
         """
         print('Broadcast the transaction')
 
-        def thread_func(node, responses):
+        def thread_func(node, responses, endpoint):
             if node['id'] != self.id:
                 address = 'http://' + node['ip'] + ':' + node['port']
-                response = requests.post(address + '/get_transaction',
+                response = requests.post(address + endpoint,
                                          data=pickle.dumps(transaction))
                 responses.append(response.status_code)
 
         threads = []
         responses = []
         for node in self.ring:
-            thread = Thread(target=thread_func, args=(node, responses))
+            thread = Thread(target=thread_func, args=(node, responses, '/validate_transaction'))
             threads.append(thread)
             thread.start()
 
@@ -213,6 +213,17 @@ class Node:
                 return False
 
         print('My transaction has been accepted!')
+
+        threads = []
+        responses = []
+        for node in self.ring:
+            thread = Thread(target=thread_func, args=(node, responses, '/get_transaction'))
+            threads.append(thread)
+            thread.start()
+
+        for tr in threads:
+            tr.join()
+
         self.add_transaction_to_block(transaction)
         return True
 
@@ -340,7 +351,7 @@ class Node:
         blocks = chain.blocks
         for i in range(len(blocks)):
             if i==0:
-                if blocks[i].previous_hash != 1 or blocks[i].current_hash != blocks[i].get_hash(): 
+                if blocks[i].previous_hash != 1 or blocks[i].current_hash != blocks[i].get_hash():
                     return False
             else:
                 valid_current_hash = blocks[i].current_hash == blocks[i].get_hash()
@@ -377,7 +388,7 @@ class Node:
                 response = requests.get(address + "/send_chain")
                 new_blockchain = pickle.loads(response._content)
 
-                if self.validate_chain(new_blockchain) and len(new_blockchain.blocks) > len(self.chain):
+                if self.validate_chain(new_blockchain) and len(new_blockchain.blocks) > len(self.chain.blocks):
                     self.chain = new_blockchain
 
         return self.validate_block(new_block)
