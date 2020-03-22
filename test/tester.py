@@ -24,6 +24,8 @@ total_time = 0
 
 def start_transactions():
     """This function sends the transactions of the text file"""
+
+    global total_time
     address = 'http://' + IPAddr + ':' + str(port) + '/api/create_transaction'
     with open(input_file, 'r') as f:
         for line in f:
@@ -46,7 +48,6 @@ def start_transactions():
             except:
                 exit("\nNode is not active. Try again later.\n")
 
-    print('Total time: %f\n' %total_time)
     input("\nWhen all transactions in the network are over, press Enter to get the final balance ...\n")
 
     try:
@@ -93,6 +94,16 @@ def start_transactions():
     except:
         exit("\nSomething went wrong while receiving your balance.\n")
 
+
+    print('Transaction time: %f\n' %total_time)
+
+    try:
+        address = 'http://' + IPAddr + ':' + str(port) + '/api/get_block_time'
+        response = requests.get(address).json()
+        message = response['message']
+        print('\n' + message + '\n')
+    except:
+        exit("\nSomething went wrong while receiving the block time.\n")
 
 def get_id():
     address = 'http://' + IPAddr + ':' + str(port) + '/api/get_id'

@@ -1,5 +1,6 @@
 import requests
 import pickle
+import time
 
 from flask import Blueprint, jsonify, request, render_template
 
@@ -44,6 +45,7 @@ def get_block():
         # - Add block to the current blockchain.
         # - Remove the new_block's transactions from the unconfirmed_blocks of the node.
 
+        new_block.total_time = time.time() - new_block.timestamp
         node.chain.blocks.append(new_block)
         node.stop_mining = True
         with node.lock:
@@ -59,6 +61,7 @@ def get_block():
             # Resolve conflict (multiple blockchains/branch).
             if node.resolve_conflicts(new_block):
                 # Add block to the current blockchain
+                new_block.total_time = time.time() - new_block.timestamp
                 node.chain.blocks.append(new_block)
                 node.stop_mining = True
                 with node.lock:
@@ -69,6 +72,7 @@ def get_block():
                 return jsonify({'mesage': "Block rejected."}), 409
 
     return jsonify({'message': "OK"})
+
 
 @rest_api.route('/validate_transaction', methods=['POST'])
 def validate_transaction():
@@ -85,6 +89,7 @@ def validate_transaction():
         return jsonify({'message': "OK"}), 200
     else:
         return jsonify({'message': "The signature is not authentic"}), 401
+
 
 @rest_api.route('/get_transaction', methods=['POST'])
 def get_transaction():
@@ -260,3 +265,22 @@ def get_id():
             message: the id of the node.
     '''
     return jsonify({'message': node.id})
+
+
+@rest_api.route('/api/get_block_time', methods=['GET'])
+def get_block_time():
+    '''Endpoint that returns the mean value of the block times in the blockchain.
+
+        Returns:
+            message: the mean value of the block times.
+    '''
+
+    block_time = 0
+    blocks = node.chain.blocks
+    # Exclude from the mean value the genesis block.
+    for i in range(1, len(blocks)):
+        block_time += blocks[i].total_time
+
+    block_time = block_time / len(blocks)
+
+    return jsonify({'message': 'Block time: ' + str(block_time)})

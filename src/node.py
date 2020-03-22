@@ -2,6 +2,7 @@ import requests
 import json
 import pickle
 import itertools
+import time
 
 from copy import deepcopy
 from collections import deque
@@ -285,7 +286,9 @@ class Node:
 
         if block_accepted:
             print('My block has been accepted')
+            block.total_time = time.time() - block.timestamp
             self.chain.blocks.append(block)
+
 
     def validate_previous_hash(self, block):
         """Validates the previous hash of an incoming block.
