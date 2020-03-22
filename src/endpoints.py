@@ -44,8 +44,7 @@ def get_block():
         # If the block is valid:
         # - Add block to the current blockchain.
         # - Remove the new_block's transactions from the unconfirmed_blocks of the node.
-
-        new_block.total_time = time.time() - new_block.timestamp
+        # Update previous hash and index in case of insertions in the chain
         node.chain.blocks.append(new_block)
         node.stop_mining = True
         with node.lock:
@@ -61,7 +60,6 @@ def get_block():
             # Resolve conflict (multiple blockchains/branch).
             if node.resolve_conflicts(new_block):
                 # Add block to the current blockchain
-                new_block.total_time = time.time() - new_block.timestamp
                 node.chain.blocks.append(new_block)
                 node.stop_mining = True
                 with node.lock:
@@ -269,18 +267,9 @@ def get_id():
 
 @rest_api.route('/api/get_block_time', methods=['GET'])
 def get_block_time():
-    '''Endpoint that returns the mean value of the block times in the blockchain.
+    '''Endpoint that returns the block_time.
 
         Returns:
             message: the mean value of the block times.
     '''
-
-    block_time = 0
-    blocks = node.chain.blocks
-    # Exclude from the mean value the genesis block.
-    for i in range(1, len(blocks)):
-        block_time += blocks[i].total_time
-
-    block_time = block_time / len(blocks)
-
-    return jsonify({'message': 'Block time: ' + str(block_time)})
+    return jsonify({'message': 'Block time: ' + str(sum(node.block_times) / len(node.block_times)) + ' in ' + str(len(node.chain.blocks))})

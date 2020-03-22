@@ -19,7 +19,6 @@ class Block:
         nonce (int): the solution of proof-of-work.
         previous_hash (hash object): hash of the previous block in the blockchain.
         current_hash (hash object): hash of the block.
-        total_time (float): time needed for the insertion of the block in the blockchain.
     """
 
     def __init__(self, index, previous_hash):
@@ -30,7 +29,6 @@ class Block:
         self.nonce = None
         self.previous_hash = previous_hash
         self.current_hash = None
-        self.total_time = None
 
     def __str__(self):
         """Returns a string representation of a Block object"""

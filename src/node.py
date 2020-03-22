@@ -45,6 +45,7 @@ class Node:
         self.stop_mining = False
         self.current_block = None
         self.unconfirmed_blocks = deque()
+        self.block_times = []
 
     def __str__(self):
         """Returns a string representation of a Node object"""
@@ -202,7 +203,8 @@ class Node:
         threads = []
         responses = []
         for node in self.ring:
-            thread = Thread(target=thread_func, args=(node, responses, '/validate_transaction'))
+            thread = Thread(target=thread_func, args=(
+                node, responses, '/validate_transaction'))
             threads.append(thread)
             thread.start()
 
@@ -218,7 +220,8 @@ class Node:
         threads = []
         responses = []
         for node in self.ring:
-            thread = Thread(target=thread_func, args=(node, responses, '/get_transaction'))
+            thread = Thread(target=thread_func, args=(
+                node, responses, '/get_transaction'))
             threads.append(thread)
             thread.start()
 
@@ -286,9 +289,8 @@ class Node:
 
         if block_accepted:
             print('My block has been accepted')
-            block.total_time = time.time() - block.timestamp
+            self.block_times.append(time.time() - block.timestamp)
             self.chain.blocks.append(block)
-
 
     def validate_previous_hash(self, block):
         """Validates the previous hash of an incoming block.
@@ -353,12 +355,13 @@ class Node:
         """
         blocks = chain.blocks
         for i in range(len(blocks)):
-            if i==0:
+            if i == 0:
                 if blocks[i].previous_hash != 1 or blocks[i].current_hash != blocks[i].get_hash():
                     return False
             else:
-                valid_current_hash = blocks[i].current_hash == blocks[i].get_hash()
-                valid_previous_hash = blocks[i].previous_hash == blocks[i-1].current_hash
+                valid_current_hash = blocks[i].current_hash == blocks[i].get_hash(
+                )
+                valid_previous_hash = blocks[i].previous_hash == blocks[i - 1].current_hash
                 if not valid_current_hash or not valid_previous_hash:
                     return False
         return True
