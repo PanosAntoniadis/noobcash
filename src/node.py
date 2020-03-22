@@ -80,7 +80,6 @@ class Node:
         This method creates a new transaction after computing the input that
         the transaction should take.
         """
-
         # Fill the input of the transaction with UTXOs, by iterating through
         # the previous transactions of the node.
         inputs = []
@@ -132,7 +131,6 @@ class Node:
         block is ready to be mined. Also, the wallet transactions and the balance
         of each node are updated.
         """
-
         print('I will add a valid transaction in the block')
 
         # If the node is the recipient or the sender of the transaction, it adds the
@@ -163,7 +161,6 @@ class Node:
             # - if mining succeeds, broadcast the mined block.
             # - if mining fails, put the block back in the queue and wait
             #   for the lock.
-
             self.unconfirmed_blocks.append(deepcopy(self.current_block))
             self.current_block = self.create_new_block()
             while True:
@@ -287,10 +284,11 @@ class Node:
                 if response.status_code == 200:
                     block_accepted = True
 
-        if block_accepted:
+        if block_accepted and self.validate_block(block):
+            print('length of chain %d' % len(self.chain.blocks))
+            self.chain.blocks.append(block)
             print('My block has been accepted')
             self.block_times.append(time.time() - block.timestamp)
-            self.chain.blocks.append(block)
 
     def validate_previous_hash(self, block):
         """Validates the previous hash of an incoming block.
@@ -316,23 +314,31 @@ class Node:
         block may contains transactions that are included in the unconfirmed blocks too. These
         'double' transactions are removed from the queue.
         """
-
         total_transactions = list(itertools.chain.from_iterable(
             [unc_block.transactions for unc_block in self.unconfirmed_blocks]))
         if (self.current_block):
             total_transactions.extend(self.current_block.transactions)
+
+        self.current_block.transactions = []
+
         filtered_transactions = [transaction for transaction in total_transactions if (
             transaction not in mined_block.transactions)]
+
         final_idx = 0
+        if not self.unconfirmed_blocks:
+            self.current_block.transactions = filtered_transactions
+            return
+
         for i, unc_block in enumerate(self.unconfirmed_blocks):
             if ((i + 1) * CAPACITY <= len(filtered_transactions)):
                 unc_block.transactions = filtered_transactions[i * CAPACITY:(
                     i + 1) * CAPACITY]
             else:
-                unc_block.transactions = filtered_transactions[i * CAPACITY:]
+                self.current_block.transactions = filtered_transactions[i * CAPACITY:]
                 final_idx = i
                 break
-        for i in range(len(self.unconfirmed_blocks) - final_idx - 1):
+
+        for i in range(len(self.unconfirmed_blocks) - final_idx):
             self.unconfirmed_blocks.pop()
 
         return
