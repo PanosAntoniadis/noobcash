@@ -65,7 +65,7 @@ def start_transactions():
             transactions.append(['send', tr[2], "Me", tr[1]])
             balance -= int(tr[2])
         elif tr[1] == id:
-            transactions.append(['receive', tr[2], tr[1], "Me"])
+            transactions.append(['receive', tr[2], tr[0], "Me"])
             balance += int(tr[2])
         else:
             exit('Wrong transactions!')
