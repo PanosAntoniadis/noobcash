@@ -56,9 +56,7 @@ class Block:
         block_dump = pickle.dumps(block_dict)
         return SHA256.new(block_dump).hexdigest()
 
-    def add_transaction(self, transaction):
-        """Adds a new transaction in the block."""
-        self.transactions.append(transaction)
+    def check_mine(self):
 
         if len(self.transactions) == CAPACITY:
             return True

@@ -152,7 +152,7 @@ class Node:
         if self.current_block is None:
             self.current_block = self.create_new_block()
 
-        if self.current_block.add_transaction(transaction):
+        if self.current_block.check_mine:
             # Mining procedure includes:
             # - add the current block in the queue of unconfirmed blocks.
             # - wait until the thread gets the lock.
@@ -213,6 +213,9 @@ class Node:
                 return False
 
         print('My transaction has been accepted!')
+        if self.current_block is None:
+            self.current_block = self.create_new_block()
+        self.current_block.transactions.append(transaction)
 
         threads = []
         responses = []
@@ -221,9 +224,6 @@ class Node:
                 node, responses, '/get_transaction'))
             threads.append(thread)
             thread.start()
-
-        for tr in threads:
-            tr.join()
 
         self.add_transaction_to_block(transaction)
         return True

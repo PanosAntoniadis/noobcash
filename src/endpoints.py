@@ -101,6 +101,11 @@ def get_transaction():
     '''
 
     new_transaction = pickle.loads(request.get_data())
+    if node.current_block is None:
+        node.current_block = node.create_new_block()
+
+    node.current_block.transactions.append(new_transaction)
+
     # If the transaction is valid, add it in the block.
     node.add_transaction_to_block(new_transaction)
 
