@@ -69,7 +69,7 @@ if __name__ == '__main__':
         # Adds the first and only transaction in the genesis block.
         first_transaction = Transaction(
             sender_address="0", sender_id='0', receiver_address=node.wallet.public_key, receiver_id=node.id, amount=100 * endpoints.n, transaction_inputs=None, nbc_sent=100 * endpoints.n)
-        gen_block.add_transaction(first_transaction)
+        gen_block.transactions.append(first_transaction)
         gen_block.current_hash = gen_block.get_hash()
         node.wallet.transactions.append(first_transaction)
 

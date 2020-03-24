@@ -152,7 +152,7 @@ class Node:
         if self.current_block is None:
             self.current_block = self.create_new_block()
 
-        if self.current_block.check_mine:
+        if self.current_block.check_mine():
             # Mining procedure includes:
             # - add the current block in the queue of unconfirmed blocks.
             # - wait until the thread gets the lock.
