@@ -38,35 +38,38 @@ def get_block():
         Returns:
             message: the outcome of the procedure.
     '''
-
     new_block = pickle.loads(request.get_data())
+    node.chain_lock.acquire()
     if node.validate_block(new_block):
         # If the block is valid:
         # - Add block to the current blockchain.
         # - Remove the new_block's transactions from the unconfirmed_blocks of the node.
         # Update previous hash and index in case of insertions in the chain
         node.chain.blocks.append(new_block)
+        node.chain_lock.release()
         node.stop_mining = True
-        with node.lock:
+        with node.filter_lock:
             node.filter_blocks(new_block)
             node.stop_mining = False
     else:
         # If the block is not valid, check if the signature is not authentic or
         # there is a conflict.
-
         if node.validate_previous_hash(new_block):
+            node.chain_lock.release()
             return jsonify({'message': "The signature is not authentic. The block has been modified."}), 401
         else:
             # Resolve conflict (multiple blockchains/branch).
             if node.resolve_conflicts(new_block):
                 # Add block to the current blockchain
                 node.chain.blocks.append(new_block)
+                node.chain_lock.release()
                 node.stop_mining = True
-                with node.lock:
+                with node.filter_lock:
                     # Remove the new_block's transactions from the unconfirmed_blocks of the node.
                     node.filter_blocks(new_block)
                     node.stop_mining = False
             else:
+                node.chain_lock.release()
                 return jsonify({'mesage': "Block rejected."}), 409
 
     return jsonify({'message': "OK"})
@@ -81,7 +84,6 @@ def validate_transaction():
         Returns:
             message: the outcome of the procedure.
     '''
-
     new_transaction = pickle.loads(request.get_data())
     if node.validate_transaction(new_transaction):
         return jsonify({'message': "OK"}), 200
@@ -101,12 +103,6 @@ def get_transaction():
     '''
 
     new_transaction = pickle.loads(request.get_data())
-    if node.current_block is None:
-        node.current_block = node.create_new_block()
-
-    node.current_block.transactions.append(new_transaction)
-
-    # If the transaction is valid, add it in the block.
     node.add_transaction_to_block(new_transaction)
 
     return jsonify({'message': "OK"}), 200

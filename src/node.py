@@ -41,7 +41,9 @@ class Node:
         self.chain = Blockchain()
         self.wallet = Wallet()
         self.ring = []
-        self.lock = Lock()
+        self.filter_lock = Lock()
+        self.chain_lock = Lock()
+        self.block_lock = Lock()
         self.stop_mining = False
         self.current_block = None
         self.unconfirmed_blocks = deque()
@@ -53,16 +55,14 @@ class Node:
 
     def create_new_block(self):
         """Creates a new block for the blockchain"""
-
-        if len(self.chain.blocks) > 0:
-            new_idx = self.chain.blocks[-1].index + 1
-            previous_hash = self.chain.blocks[-1].current_hash
-        else:
+        if len(self.chain.blocks) == 0:
             # Here, the genesis block is created.
             new_idx = 0
             previous_hash = 1
-
-        self.current_block = Block(new_idx, previous_hash)
+            self.current_block = Block(new_idx, previous_hash)
+        else:
+            # They will be updated in mining.
+            self.current_block = Block(None, None)
         return self.current_block
 
     def register_node_to_ring(self, id, ip, port, public_key, balance):
@@ -108,11 +108,9 @@ class Node:
         transaction = Transaction(
             sender_address=self.wallet.public_key, sender_id=self.id, receiver_address=receiver, receiver_id=receiver_id, amount=amount,
             transaction_inputs=inputs, nbc_sent=nbc_sent)
-        print('Transaction created')
 
         # Sign the transaction
         transaction.sign_transaction(self.wallet.private_key)
-        print('Transaction signed')
 
         # Broadcast the transaction to the whole network.
         if not self.broadcast_transaction(transaction):
@@ -131,7 +129,6 @@ class Node:
         block is ready to be mined. Also, the wallet transactions and the balance
         of each node are updated.
         """
-        print('I will add a valid transaction in the block')
 
         # If the node is the recipient or the sender of the transaction, it adds the
         # transaction in its wallet.
@@ -152,7 +149,9 @@ class Node:
         if self.current_block is None:
             self.current_block = self.create_new_block()
 
-        if self.current_block.check_mine:
+        self.block_lock.acquire()
+        if self.current_block.add_transaction(transaction):
+
             # Mining procedure includes:
             # - add the current block in the queue of unconfirmed blocks.
             # - wait until the thread gets the lock.
@@ -161,24 +160,25 @@ class Node:
             # - if mining succeeds, broadcast the mined block.
             # - if mining fails, put the block back in the queue and wait
             #   for the lock.
+
+            # Update previous hash and index in case of insertions in the chain
             self.unconfirmed_blocks.append(deepcopy(self.current_block))
             self.current_block = self.create_new_block()
+            self.block_lock.release()
             while True:
-                with self.lock:
-                    print('Got the lock for mining')
+                with self.filter_lock:
                     if (self.unconfirmed_blocks):
                         mined_block = self.unconfirmed_blocks.popleft()
                         mining_result = self.mine_block(mined_block)
                         if (mining_result):
-                            print('Mine success!')
                             break
                         else:
-                            print('Mine fail, put back the block')
                             self.unconfirmed_blocks.appendleft(mined_block)
                     else:
-                        print('No unconfirmed blocks to mine')
                         return
             self.broadcast_block(mined_block)
+        else:
+            self.block_lock.release()
 
     def broadcast_transaction(self, transaction):
         """Broadcasts a transaction to the whole network.
@@ -188,8 +188,6 @@ class Node:
         thread. If all nodes accept the transaction, the node adds it in the current
         block.
         """
-        print('Broadcast the transaction')
-
         def thread_func(node, responses, endpoint):
             if node['id'] != self.id:
                 address = 'http://' + node['ip'] + ':' + node['port']
@@ -211,12 +209,6 @@ class Node:
         for res in responses:
             if res != 200:
                 return False
-
-        print('My transaction has been accepted!')
-        if self.current_block is None:
-            self.current_block = self.create_new_block()
-        self.current_block.transactions.append(transaction)
-
         threads = []
         responses = []
         for node in self.ring:
@@ -252,17 +244,14 @@ class Node:
         This methods implements the proof of work algorithm.
         """
 
-        print('Mining...')
         block.nonce = 0
-        # Update previous hash and index in case of insertions in the chain
-        block.previous_hash = self.chain.blocks[-1].current_hash
         block.index = self.chain.blocks[-1].index + 1
+        block.previous_hash = self.chain.blocks[-1].current_hash
         computed_hash = block.get_hash()
         while not computed_hash.startswith('0' * MINING_DIFFICULTY) and not self.stop_mining:
             block.nonce += 1
             computed_hash = block.get_hash()
         block.current_hash = computed_hash
-        print('Mine ended')
 
         return not self.stop_mining
 
@@ -275,20 +264,34 @@ class Node:
         """
 
         block_accepted = False
-        print('Broadcast the mined block')
-        for node in self.ring:
+
+        def thread_func(node, responses):
             if node['id'] != self.id:
                 address = 'http://' + node['ip'] + ':' + node['port']
                 response = requests.post(address + '/get_block',
                                          data=pickle.dumps(block))
-                if response.status_code == 200:
-                    block_accepted = True
+                responses.append(response.status_code)
 
-        if block_accepted and self.validate_block(block):
-            print('length of chain %d' % len(self.chain.blocks))
-            self.chain.blocks.append(block)
-            print('My block has been accepted')
-            self.block_times.append(time.time() - block.timestamp)
+        threads = []
+        responses = []
+        for node in self.ring:
+            thread = Thread(target=thread_func, args=(
+                node, responses))
+            threads.append(thread)
+            thread.start()
+
+        for tr in threads:
+            tr.join()
+
+        for res in responses:
+            if res == 200:
+                block_accepted = True
+
+        if block_accepted:
+            with self.chain_lock:
+                if self.validate_block(block):
+                    self.chain.blocks.append(block)
+                    self.block_times.append(time.time() - block.timestamp)
 
     def validate_previous_hash(self, block):
         """Validates the previous hash of an incoming block.
@@ -314,32 +317,36 @@ class Node:
         block may contains transactions that are included in the unconfirmed blocks too. These
         'double' transactions are removed from the queue.
         """
-        total_transactions = list(itertools.chain.from_iterable(
-            [unc_block.transactions for unc_block in self.unconfirmed_blocks]))
-        if (self.current_block):
-            total_transactions.extend(self.current_block.transactions)
+        with self.block_lock:
+            total_transactions = list(itertools.chain.from_iterable(
+                [unc_block.transactions for unc_block in self.unconfirmed_blocks]))
 
-        self.current_block.transactions = []
+            if (self.current_block):
+                total_transactions.extend(self.current_block.transactions)
 
-        filtered_transactions = [transaction for transaction in total_transactions if (
-            transaction not in mined_block.transactions)]
+            self.current_block.transactions = []
 
-        final_idx = 0
-        if not self.unconfirmed_blocks:
-            self.current_block.transactions = filtered_transactions
-            return
+            filtered_transactions = [transaction for transaction in total_transactions if (
+                transaction not in mined_block.transactions)]
 
-        for i, unc_block in enumerate(self.unconfirmed_blocks):
-            if ((i + 1) * CAPACITY <= len(filtered_transactions)):
-                unc_block.transactions = filtered_transactions[i * CAPACITY:(
-                    i + 1) * CAPACITY]
-            else:
-                self.current_block.transactions = filtered_transactions[i * CAPACITY:]
-                final_idx = i
-                break
+            final_idx = 0
+            if not self.unconfirmed_blocks:
+                self.current_block.transactions = deepcopy(
+                    filtered_transactions)
+                return
 
-        for i in range(len(self.unconfirmed_blocks) - final_idx):
-            self.unconfirmed_blocks.pop()
+            i = 0
+            while ((i + 1) * CAPACITY <= len(filtered_transactions)):
+                self.unconfirmed_blocks[i].transactions = deepcopy(filtered_transactions[i * CAPACITY:(
+                    i + 1) * CAPACITY])
+                i += 1
+
+            if i * CAPACITY < len(filtered_transactions):
+                self.current_block.transactions = deepcopy(
+                    filtered_transactions[i * CAPACITY:])
+
+            for i in range(len(self.unconfirmed_blocks) - i):
+                self.unconfirmed_blocks.pop()
 
         return
 
@@ -394,13 +401,27 @@ class Node:
             - validate the given blockchains.
             - keep the longest one.
         """
+        selected_chain = None
         for ring_node in self.ring:
             if ring_node['id'] != self.id:
                 address = 'http://' + ring_node['ip'] + ':' + ring_node['port']
                 response = requests.get(address + "/send_chain")
                 new_blockchain = pickle.loads(response._content)
 
-                if self.validate_chain(new_blockchain) and len(new_blockchain.blocks) > len(self.chain.blocks):
-                    self.chain = new_blockchain
+                if selected_chain:
+                    if self.validate_chain(new_blockchain) and len(new_blockchain.blocks) > len(selected_chain.blocks):
+                        selected_chain = new_blockchain
+                else:
+                    if self.validate_chain(new_blockchain) and len(new_blockchain.blocks) > len(self.chain.blocks):
+                        selected_chain = new_blockchain
 
+        if selected_chain:
+            self.stop_mining = True
+            with self.filter_lock:
+                i = len(selected_chain.blocks) - 1
+                while i > 0 and (selected_chain.blocks[i].current_hash != self.chain.blocks[-1].current_hash):
+                    self.filter_blocks(selected_chain.blocks[i])
+                    i -= 1
+                self.chain = selected_chain
+                self.stop_mining = False
         return self.validate_block(new_block)

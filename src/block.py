@@ -47,8 +47,7 @@ class Block:
 
         # We should compute current hash without using the
         # field self.current_hash.
-        block_dict = {'index': self.index,
-                      'timestamp': self.timestamp,
+        block_dict = {
                       'transactions': self.transactions,
                       'nonce': self.nonce,
                       'previous_hash': self.previous_hash}
@@ -56,8 +55,10 @@ class Block:
         block_dump = pickle.dumps(block_dict)
         return SHA256.new(block_dump).hexdigest()
 
-    def check_mine(self):
-
+    def add_transaction(self, transaction):
+        """Adds a new transaction in the block."""
+        
+        self.transactions.append(transaction)
         if len(self.transactions) == CAPACITY:
             return True
 
