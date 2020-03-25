@@ -149,13 +149,9 @@ class Node:
         if self.current_block is None:
             self.current_block = self.create_new_block()
 
-<<<<<<< HEAD
         self.block_lock.acquire()
         if self.current_block.add_transaction(transaction):
 
-=======
-        if self.current_block.check_mine():
->>>>>>> 40a3b286f9332bb620fb8fbb9f6fae101aed2bdb
             # Mining procedure includes:
             # - add the current block in the queue of unconfirmed blocks.
             # - wait until the thread gets the lock.
