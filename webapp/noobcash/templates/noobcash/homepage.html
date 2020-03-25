@@ -1,0 +1,30 @@
+{% extends "noobcash/base.html" %}{% block content %}
+<h1 class="mt-5" style="text-align:center;"> Default nodes</h1>
+<hr>
+{% for node in nodes %}
+<div class="row  no-gutters mb-2">
+  <div class="col-lg-10">
+    <article class="content-section">
+      <div>
+        <h2> <text class="node-name">{{ node }}</text></h2>
+        <p class="node-metadata">
+          <div class="item-list">
+            <item> ID: {{node.node_id}} </item>
+            <item> IP: {{node.IP}} </item>
+            <item> PORT: {{node.PORT}} </item>
+            <item> status: <text class="{{node.status}}">{{node.status}}</text></item>
+          </div>
+      </div>
+    </article>
+  </div>
+  <div class="col-lg-2">
+    {% if node.status == 'Online' %}
+      <a href="" target="_blank"><button class="node-button bg-success"><i class="fa fa-arrow-circle-right"></i></button></a>
+    {% else %}
+      <button style="cursor: not-allowed;" class="node-button bg-danger"><i class="fa fa-ban"></i></button>
+    {% endif %}
+  </div>
+</div>
+  {% endfor %}
+
+{% endblock %}
