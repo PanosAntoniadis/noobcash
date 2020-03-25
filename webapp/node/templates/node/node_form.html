@@ -1,0 +1,16 @@
+{% extends "noobcash/base.html" %} {% load crispy_forms_tags %} {% block content %}
+<div class="content-section">
+  <form method="POST">
+    {% csrf_token %}
+    <fieldsset class="form-group">
+      <legend class="border-bottom mb-4">
+        New Node
+      </legend>
+      {{ form|crispy }}
+    </fieldsset>
+    <div class="form-group">
+      <button class="btn btn-outline-info" type="submit">Connect</button>
+    </div>
+  </form>
+</div>
+{% endblock content %}
