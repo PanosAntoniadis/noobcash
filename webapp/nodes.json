@@ -1,0 +1,62 @@
+[
+    {
+        "node_id": 0,
+        "IP": "127.0.0.1",
+        "PORT": 5000,
+        "status": "Offline"        
+    },
+    {
+        "node_id": 1,
+        "IP": "127.0.0.1",
+        "PORT": 5001,
+        "status": "Offline"
+    },
+    {
+        "node_id": 2,
+        "IP": "127.0.0.1",
+        "PORT": 5002,
+        "status": "Offline"
+    },
+    {
+        "node_id": 3,
+        "IP": "127.0.0.1",
+        "PORT": 5003,
+        "status": "Offline"
+    },
+    {
+        "node_id": 4,
+        "IP": "127.0.0.1",
+        "PORT": 5004,
+        "status": "Offline"
+    },
+    {
+        "node_id": 5,
+        "IP": "127.0.0.1",
+        "PORT": 5005,
+        "status": "Offline"
+    },
+    {
+        "node_id": 6,
+        "IP": "127.0.0.1",
+        "PORT": 5006,
+        "status": "Offline"
+    },
+    {
+        "node_id": 7,
+        "IP": "127.0.0.1",
+        "PORT": 5007,
+        "status": "Offline"
+    },
+    {
+        "node_id": 8,
+        "IP": "127.0.0.1",
+        "PORT": 5008,
+        "status": "Offline"
+    },
+    {
+        "node_id": 9,
+        "IP": "127.0.0.1",
+        "PORT": 5009,
+        "status": "Offline"
+    }
+]
