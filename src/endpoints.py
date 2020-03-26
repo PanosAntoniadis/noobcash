@@ -221,7 +221,7 @@ def create_transaction():
         if node.create_transaction(receiver_public_key, receiver_id, amount):
             return jsonify({'message': 'The transaction was successful.', 'balance': node.wallet.get_balance()}), 200
         else:
-            return jsonify({'message': 'Not enough NBCs. Your current balance is: ' + str(node.wallet.get_balance()) + ' NBCs'}), 400
+            return jsonify({'message': 'Not enough NBCs.', 'balance':node.wallet.get_balance()}), 400
     else:
         return jsonify({'message': 'Transaction failed. Wrong receiver id.'}), 400
 
