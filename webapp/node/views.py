@@ -4,7 +4,9 @@ from .models import Node
 from django.contrib import messages
 from .forms import CreateNodeForm, CreateTransactionForm
 from django.utils.safestring import mark_safe
+from django.core.paginator import Paginator
 import requests
+import pickle
 
 @login_required
 def new_node(request):
@@ -16,10 +18,25 @@ def new_node(request):
             try:
                 response = requests.get(f'http://{IP}:{PORT}/api/get_id')
                 node_id = response.json()["message"]
-                # ADD LINK TO NODE
-                messages.success(request, mark_safe(f'Node {node_id} is online. <a href="#">Start Node</a>'))
+
+                # Check if the node is already in our database
+                nodes = Node.objects.filter(node_id=node_id, IP=IP, PORT=PORT)
+                if nodes:
+                    node = nodes[0]
+                    node.status = "Online"
+                else:
+                    node = Node(node_id=node_id, IP=IP, PORT=PORT, status="Online")
+
+                node.save()
+                messages.success(request, mark_safe(f'Node {node_id} is online. <a target="_blank" href="/node/{node.id}/new-transaction"> Start Node </a>'))
                 return redirect('node-new')
             except:
+                # Change status to Offline
+                nodes = node.objects.filter(node_id=node_id, IP=IP, PORT=PORT)
+                if nodes:
+                    node = nodes[0]
+                    node.status = "Offline"
+
                 messages.error(request, 'The node is not currently online.')
                 return redirect('node-new')
     else:
@@ -66,21 +83,6 @@ def new_transaction(request, id):
     return render(request, 'node/new_transaction.html', {'form': form, 'node':node})
 
 @login_required
-def my_balance(request,id):
-    nodes=Node.objects.filter(id=id,status="Online")
-    if not nodes:
-        messages.error(request,"The node is not currently online")
-        return redirect('noobcash-home')
-    node=nodes[0]
-    try:
-        response = requests.get(f'http://{node.IP}:{node.PORT}/api/get_balance').json()
-        balance = response['balance']
-        return render(request, 'node/my_balance.html', {'node': node,'balance':balance})
-    except:
-        pass
-    return render(request, 'node/my_balance.html', {'node': node})
-
-@login_required
 def last_valid_transactions(request, id):
     nodes = Node.objects.filter(id=id, status="Online")
     if not nodes:
@@ -121,3 +123,18 @@ def my_transactions(request, id):
         pass
 
     return render(request, 'node/my_transactions.html', {'node':node})
+
+@login_required
+def my_balance(request,id):
+    nodes=Node.objects.filter(id=id,status="Online")
+    if not nodes:
+        messages.error(request,"The node is not currently online")
+        return redirect('noobcash-home')
+    node=nodes[0]
+    try:
+        response = requests.get(f'http://{node.IP}:{node.PORT}/api/get_balance').json()
+        balance = response['balance']
+        return render(request, 'node/my_balance.html', {'node': node,'balance':balance})
+    except:
+        pass
+    return render(request, 'node/my_balance.html', {'node': node})
