@@ -33,7 +33,7 @@
             <!-- Navbar Center -->
             <div class="navbar-nav w-100 justify-content-center">
                 <a class="nav-item nav-link" href="{% url 'node-new-transaction' node.id %}">New transaction</a>
-                <a class="nav-item nav-link" href="#">My balance</a>
+                <a class="nav-item nav-link" href="{% url 'node-my-balance' node.id %}">My balance</a>
                 <a class="nav-item nav-link" href="{% url 'node-my-transactions' node.id %}">My transactions</a>
                 <a class="nav-item nav-link" href="{% url 'node-last-valid-block' node.id %}">Last valid block</a>
             </div>
