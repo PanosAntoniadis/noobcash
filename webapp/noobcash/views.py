@@ -25,4 +25,5 @@ def home(request):
     for tr in threads:
             tr.join()
 
-    return render(request,'noobcash/homepage.html', {'nodes': Node.objects.all()})
+    # We first add 10 default nodes to our database. Therefore their id will be less than 11 [0,...,10]
+    return render(request,'noobcash/homepage.html', {'nodes': Node.objects.filter(id__lt = 11)})
