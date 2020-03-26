@@ -233,7 +233,7 @@ def get_balance():
         Returns:
             message: the current balance.
     '''
-    return jsonify({'message': 'Current balance: ' + str(node.wallet.get_balance()) + ' NBCs'})
+    return jsonify({'message': 'Current balance: ', 'balance': node.wallet.get_balance()})
 
 
 @rest_api.route('/api/get_transactions', methods=['GET'])
