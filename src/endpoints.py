@@ -223,11 +223,11 @@ def create_transaction():
             receiver_public_key = ring_node['public_key']
     if (receiver_public_key and receiver_id != node.id):
         if node.create_transaction(receiver_public_key, receiver_id, amount):
-            return jsonify({'message': 'The transaction was successful.', 'balance': node.wallet.get_balance()})
+            return jsonify({'message': 'The transaction was successful.', 'balance': node.wallet.get_balance()}), 200
         else:
-            return jsonify({'message': 'Not enough NBCs. Your current balance is: ' + str(node.wallet.get_balance()) + ' NBCs'})
+            return jsonify({'message': 'Not enough NBCs. Your current balance is: ' + str(node.wallet.get_balance()) + ' NBCs'}), 400
     else:
-        return jsonify({'message': 'Transaction failed. Wrong receiver id.'})
+        return jsonify({'message': 'Transaction failed. Wrong receiver id.'}), 400
 
 
 @rest_api.route('/api/get_balance', methods=['GET'])
