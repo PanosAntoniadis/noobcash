@@ -42,3 +42,19 @@ def new_transaction(request):
     else:
         form = CreateTransactionForm()
     return render(request, 'node/new_transaction.html', {'form': form})
+
+
+@login_required
+def my_balance(request,id):
+    nodes=Node.objects.filter(id=id,status="Online")
+    if not nodes:
+        messages.error(request,"The node is not currently online")
+        return redirect('noobcash-home')
+    node=nodes[0]
+    try:
+        response = requests.get(f'http://{node.IP}:{node.PORT}/api/get_balance').json()
+        balance = response['message']
+        return render(request, 'node/my_balance.html', {'node': node,'balance':balance})
+    except:
+        pass
+    return render(request, 'node/my_balance.html', {'node': node})
