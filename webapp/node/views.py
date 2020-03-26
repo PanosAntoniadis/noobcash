@@ -43,7 +43,6 @@ def new_transaction(request):
         form = CreateTransactionForm()
     return render(request, 'node/new_transaction.html', {'form': form})
 
-
 @login_required
 def my_balance(request,id):
     nodes=Node.objects.filter(id=id,status="Online")
@@ -53,8 +52,50 @@ def my_balance(request,id):
     node=nodes[0]
     try:
         response = requests.get(f'http://{node.IP}:{node.PORT}/api/get_balance').json()
-        balance = response['message']
+        balance = response['balance']
         return render(request, 'node/my_balance.html', {'node': node,'balance':balance})
     except:
         pass
     return render(request, 'node/my_balance.html', {'node': node})
+
+@login_required
+def last_valid_transactions(request, id):
+    nodes = Node.objects.filter(id=id, status="Online")
+    if not nodes:
+        messages.error(request, 'The node is not currently online.')
+        return redirect('noobcash-home')
+    
+    node = nodes[0]
+
+    try:
+        response = requests.get(f'http://{node.IP}:{node.PORT}/api/get_transactions')
+        data = pickle.loads(response._content)
+        return render(request, 'node/last_valid_block.html', {'node':node, 'transactions':data})
+    except:
+        pass
+
+    return render(request, 'node/last_valid_block.html', {'node':node})
+    
+
+@login_required
+def my_transactions(request, id):
+    nodes = Node.objects.filter(id=id, status="Online")
+    if not nodes:
+        messages.error(request, 'The node is not currently online.')
+        return redirect('noobcash-home')
+    
+    node = nodes[0]
+
+    try:
+        response = requests.get(f'http://{node.IP}:{node.PORT}/api/get_my_transactions')
+        data = pickle.loads(response._content)
+
+        paginator = Paginator(data, 10)
+        page_number = request.GET.get('page')
+        page_obj = paginator.get_page(page_number)
+
+        return render(request, 'node/my_transactions.html', {'node':node, 'page_obj':page_obj})
+    except:
+        pass
+
+    return render(request, 'node/my_transactions.html', {'node':node})
