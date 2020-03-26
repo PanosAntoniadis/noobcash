@@ -19,7 +19,7 @@
   </div>
   <div class="col-lg-2">
     {% if node.status == 'Online' %}
-      <a href="" target="_blank"><button class="node-button bg-success"><i class="fa fa-arrow-circle-right"></i></button></a>
+      <a href="{% url 'node-new-transaction' node.id %}" target="_blank"><button class="node-button bg-success"><i class="fa fa-arrow-circle-right"></i></button></a>
     {% else %}
       <button style="cursor: not-allowed;" class="node-button bg-danger"><i class="fa fa-ban"></i></button>
     {% endif %}
