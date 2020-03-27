@@ -1,12 +1,12 @@
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import render, redirect
-from .models import Node
 from django.contrib import messages
 from .forms import CreateNodeForm, CreateTransactionForm
 from django.utils.safestring import mark_safe
 from django.core.paginator import Paginator
 import requests
 import pickle
+from .models import Node
 
 @login_required
 def new_node(request):
@@ -15,6 +15,7 @@ def new_node(request):
         if form.is_valid():
             IP = request.POST["IP"]
             PORT = request.POST["PORT"]
+            nodes = Node.objects.filter(IP=IP, PORT=PORT)
             try:
                 response = requests.get(f'http://{IP}:{PORT}/api/get_id')
                 node_id = response.json()["message"]
@@ -32,9 +33,7 @@ def new_node(request):
                 return redirect('node-new')
             except:
                 # Change status to Offline
-                nodes = Νode.objects.filter(node_id=node_id, IP=IP, PORT=PORT)
-                if nodes:
-                    node = nodes[0]
+                for node in nodes:
                     node.status = "Offline"
 
                 messages.error(request, 'The node is not currently online.')
