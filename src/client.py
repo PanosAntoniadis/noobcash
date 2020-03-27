@@ -158,7 +158,8 @@ def client():
             try:
                 response = requests.get(address).json()
                 message = response['message']
-                print(message + '\n')
+                balance = str(response['balance'])
+                print(message + balance + ' NBCs\n')
             except:
                 print("Node is not active. Try again later.\n")
             if HomeOrExit() == 'exit':

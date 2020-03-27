@@ -1,0 +1,91 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="shortcut icon" type="image/png" href="{% static 'noobcash/images/favicon.ico' %}" />
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css"
+        integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
+    <!-- my CSS -->
+    <link rel="stylesheet" href="{% static 'noobcash/css/main.css' %}" type="text/css">
+    <!-- font-awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+    <title>Noobcash</title>
+</head>
+<header class="site-header">
+    <nav class="navbar navbar-expand-md navbar-dark bg-steel fixed-top">
+        <div class ="d-flex w-50 mr-auto">
+            <a class="navbar-brand" href="{% url 'node-new-transaction' node.id %}">Noobcash - Node {{ node.node_id }}</a>
+            {% if user.is_authenticated %}
+            <div class="navbar-nav mr-auto">
+                <a class="nav-item nav-link" href="{% url 'noobcash-home' %}">Home</a>
+            </div>
+            {% endif %}
+        </div>
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarToggle"
+            aria-controls="navbarToggle" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse w-100" id="navbarToggle">            
+            <!-- Navbar Center -->
+            <div class="navbar-nav w-100 justify-content-center">
+                <a class="nav-item nav-link" href="{% url 'node-new-transaction' node.id %}">New transaction</a>
+                <a class="nav-item nav-link" href="{% url 'node-my-balance' node.id %}">My balance</a>
+                <a class="nav-item nav-link" href="{% url 'node-my-transactions' node.id %}">My transactions</a>
+                <a class="nav-item nav-link" href="{% url 'node-last-valid-block' node.id %}">Last valid block</a>
+            </div>
+            <!-- Navbar Right Side -->
+            <div class="navbar-nav ml-auto w-100 justify-content-end">
+                {% if user.is_authenticated %}
+                <a class="nav-item nav-link" href="{% url 'logout' %}">Logout</a>
+                {% endif %}
+            </div>
+        </div>
+    </nav>
+</header>
+<main role="main" class="container-fluid">
+    <div class="row">
+        <div class="col-lg-2">
+            {% if user.is_authenticated %}
+            <img src="{% static 'noobcash/images/blockchain.gif' %}" class="blockchain-img">
+            {% endif %}
+        </div>
+        <div class="col-lg-8 mt-5">
+            {% if messages %}
+                {% for message in messages %}
+                    {% if message.tags == 'error' %}
+                    <div class="alert alert-danger">
+                        {{ message }}
+                    </div>
+                    {% else %}
+                    <div class="alert alert-{{ message.tags }}">
+                        {{ message }}
+                    </div>
+                    {% endif %}
+                {% endfor %}
+            {% endif %}
+            {% block content %}{% endblock %}
+        </div>
+        <div class="col-lg-2">
+            {% if user.is_authenticated %}
+            <img src="{% static 'noobcash/images/blockchain.gif' %}" class="blockchain-img">
+            {% endif %}
+        </div>
+    </div>
+</main>
+
+<script src="https://code.jquery.com/jquery-3.4.1.slim.min.js"
+    integrity="sha384-J6qa4849blE2+poT4WnyKhv5vZF5SrPo0iEjwBvKU7imGFAV0wwj1yYfoRSJoZ+n"
+    crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js"
+    integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo"
+    crossorigin="anonymous"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js"
+    integrity="sha384-wfSDF2E50Y2D1uUdj0O3uMBJnjuUD4Ih7YwaYd1iqfktj0Uod8GCExl3Og8ifwB6"
+    crossorigin="anonymous"></script>
+</body>
+
+</html>
