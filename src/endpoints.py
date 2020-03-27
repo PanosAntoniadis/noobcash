@@ -273,4 +273,8 @@ def get_block_time():
         Returns:
             message: the mean value of the block times.
     '''
-    return jsonify({'message': 'Block time: ' + str(sum(node.block_times) / len(node.block_times)) + ' in ' + str(len(node.chain.blocks))})
+    if len(node.block_times) > 0:
+        message = 'Block time: ' + str(sum(node.block_times) / len(node.block_times)) + ' in ' + str(len(node.chain.blocks))
+    else:
+        message = ''
+    return jsonify({'message': message})

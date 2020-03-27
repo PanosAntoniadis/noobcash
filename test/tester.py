@@ -88,7 +88,8 @@ def start_transactions():
         address = 'http://' + IPAddr + ':' + str(port) + '/api/get_balance'
         response = requests.get(address).json()
         message = response['message']
-        print('\n' + message + '\n')
+        balance = str(response['balance'])
+        print('\n' + message + ' ' + balance + '\n')
         print("The balance calculated based on the transactions\nin the table above is: " +
               str(balance) + " NBCs\n")
     except:
@@ -101,6 +102,7 @@ def start_transactions():
         address = 'http://' + IPAddr + ':' + str(port) + '/api/get_block_time'
         response = requests.get(address).json()
         message = response['message']
+
         print('\n' + message + '\n')
     except:
         exit("\nSomething went wrong while receiving the block time.\n")
