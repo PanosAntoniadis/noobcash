@@ -32,7 +32,7 @@ def new_node(request):
                 return redirect('node-new')
             except:
                 # Change status to Offline
-                nodes = node.objects.filter(node_id=node_id, IP=IP, PORT=PORT)
+                nodes = Νode.objects.filter(node_id=node_id, IP=IP, PORT=PORT)
                 if nodes:
                     node = nodes[0]
                     node.status = "Offline"
