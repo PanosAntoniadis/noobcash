@@ -20,12 +20,13 @@ else:
     IPAddr = socket.gethostbyname(hostname)
 
 total_time = 0
-
+num_transactions = 0
 
 def start_transactions():
     """This function sends the transactions of the text file"""
 
     global total_time
+    global num_transactions
     address = 'http://' + IPAddr + ':' + str(port) + '/api/create_transaction'
     with open(input_file, 'r') as f:
         for line in f:
@@ -41,9 +42,12 @@ def start_transactions():
             # Send the current transaction.
             try:
                 start_time = time.time()
-                response = requests.post(address, data=transaction).json()
-                total_time += time.time() - start_time
-                message = response["message"]
+                response = requests.post(address, data=transaction)
+                end_time = time.time() - start_time
+                message = response.json()["message"]
+                if response.status_code == 200:
+                    total_time += end_time
+                    num_transactions += 1
                 print("\n" + message + '\n')
             except:
                 exit("\nNode is not active. Try again later.\n")
@@ -95,17 +99,21 @@ def start_transactions():
     except:
         exit("\nSomething went wrong while receiving your balance.\n")
 
-
-    print('Transaction time: %f\n' %total_time)
-
     try:
-        address = 'http://' + IPAddr + ':' + str(port) + '/api/get_block_time'
+        address = 'http://' + IPAddr + ':' + str(port) + '/api/get_metrics'
         response = requests.get(address).json()
-        message = response['message']
-
-        print('\n' + message + '\n')
+        num_blocks = response['num_blocks'] - 1
+        capacity = response['capacity']
+        difficulty = response['difficulty']
+        with open('./results', 'a') as f:
+            f.write('Total transactions: %d\n' %num_transactions)
+            f.write('Total blocks (without genesis): %d\n' %num_blocks)
+            f.write('Total time: %f\n' %total_time)
+            f.write('Capacity: %d\n' %capacity)
+            f.write('Difficulty: %d\n' %difficulty)
+            f.write('\n')
     except:
-        exit("\nSomething went wrong while receiving the block time.\n")
+        exit("\nSomething went wrong while receiving the total blocks.\n")
 
 def get_id():
     address = 'http://' + IPAddr + ':' + str(port) + '/api/get_id'

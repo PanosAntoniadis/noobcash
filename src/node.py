@@ -47,7 +47,6 @@ class Node:
         self.stop_mining = False
         self.current_block = None
         self.unconfirmed_blocks = deque()
-        self.block_times = []
 
     def __str__(self):
         """Returns a string representation of a Node object"""
@@ -291,7 +290,6 @@ class Node:
             with self.chain_lock:
                 if self.validate_block(block):
                     self.chain.blocks.append(block)
-                    self.block_times.append(time.time() - block.timestamp)
 
     def validate_previous_hash(self, block):
         """Validates the previous hash of an incoming block.
