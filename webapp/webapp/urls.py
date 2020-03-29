@@ -21,8 +21,19 @@ from node import views as node_views
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('', auth_views.LoginView.as_view(redirect_authenticated_user=True, template_name='user/login.html') , name='login'),
-    path('logout/', auth_views.LogoutView.as_view(template_name='user/logout.html') , name='logout'),
+    path(
+        '',
+        auth_views.LoginView.as_view(
+            redirect_authenticated_user=True,
+            template_name='user/login.html'
+        ),
+        name='login'
+    ),
+    path(
+        'logout/',
+        auth_views.LogoutView.as_view(template_name='user/logout.html'),
+        name='logout'
+    ),
     path('home/', include('noobcash.urls')),
     path('node/', include('node.urls')),
 ]

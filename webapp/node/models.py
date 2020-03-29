@@ -1,5 +1,6 @@
 from django.db import models
 
+
 class Node(models.Model):
     id = models.IntegerField(primary_key=True)
     node_id = models.IntegerField(null=True, blank=True)
@@ -9,9 +10,10 @@ class Node(models.Model):
 
     def __str__(self):
         return f'Node {self.node_id}'
-    
+
     def get_absolute_url(self):
         return reverse('node-new-transaction')
+
 
 class Transaction(models.Model):
     receiver_id = models.IntegerField()
@@ -19,8 +21,3 @@ class Transaction(models.Model):
 
     def get_absolute_url(self):
         return reverse('node-balance')
-
-
-
-
-    
