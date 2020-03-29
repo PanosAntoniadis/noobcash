@@ -110,8 +110,6 @@ class Transaction:
         verifier = pss.new(key)
         try:
             verifier.verify(h, self.signature.encode('ISO-8859-1'))
-            print("The signature is authentic.")
             return True
         except (ValueError, TypeError):
-            print("The signature is not authentic.")
             return False

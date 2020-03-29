@@ -4,8 +4,8 @@ import time
 
 from flask import Blueprint, jsonify, request, render_template
 
-from node import Node
-from block import Block
+from node import Node, MINING_DIFFICULTY
+from block import Block, CAPACITY
 from transaction import Transaction
 from transaction_output import TransactionOutput
 from node import Node
@@ -266,15 +266,14 @@ def get_id():
     return jsonify({'message': node.id})
 
 
-@rest_api.route('/api/get_block_time', methods=['GET'])
-def get_block_time():
-    '''Endpoint that returns the block_time.
+@rest_api.route('/api/get_metrics', methods=['GET'])
+def get_metrics():
+    '''Endpoint that returns some useful parameters of the network.
 
         Returns:
-            message: the mean value of the block times.
+            num_blocks: total number of blocks.
+            capacity: the capacity of each block.
+            difficulty: the mining difficulty
     '''
-    if len(node.block_times) > 0:
-        message = 'Block time: ' + str(sum(node.block_times) / len(node.block_times)) + ' in ' + str(len(node.chain.blocks))
-    else:
-        message = ''
-    return jsonify({'message': message})
+
+    return jsonify({'num_blocks': len(node.chain.blocks), 'difficulty': MINING_DIFFICULTY, 'capacity':CAPACITY})
