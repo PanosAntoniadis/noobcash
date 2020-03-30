@@ -74,11 +74,19 @@ def new_transaction(request, id):
             }
             try:
                 # For production add the timeout argument to ensure
-                # that the request below won't stay hanging for a response.
+                # that the request below won't stay hanging for a response
+                # from an offline node, but it will wait for a response in
+                # case a transaction leads to mining. Therefore in this
+                # request the timeout parameter will be a tuple. The second
+                # value of the tuple could be None to declare that it has to
+                # wait as long as it takes for that response.
                 # e.g. requests.post(
                 #                       <address>,
                 #                       data=<data>,
-                #                       timeout=<time_in_seconds>
+                #                       timeout=(
+                #                               <time_in_sec_for_connection>,
+                #                               <time_in_sec_for_response>
+                #                       )
                 #                   )
                 response = requests.post(
                     f'http://{IP}:{PORT}/api/create_transaction',
