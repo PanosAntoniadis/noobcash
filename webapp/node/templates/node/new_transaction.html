@@ -1,6 +1,6 @@
 {% extends "node/node_base.html" %} {% load crispy_forms_tags %} {% block content %}
-<div class="content-section">
-    <form method="POST">
+<div class="content-section" >
+    <form method="POST" onsubmit="alert('Processing your transaction.\nThis might take a few minutes.')">
         {% csrf_token %}
         <fieldsset class="form-group">
             <legend class="border-bottom mb-4">
