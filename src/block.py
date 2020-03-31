@@ -5,7 +5,7 @@ import pickle
 
 # Capacity defines the maximum number of transactions
 # a block can have.
-CAPACITY = 10
+CAPACITY = 1
 
 
 class Block:
@@ -47,17 +47,14 @@ class Block:
 
         # We should compute current hash without using the
         # field self.current_hash.
-        block_dict = {
-                      'transactions': self.transactions,
-                      'nonce': self.nonce,
-                      'previous_hash': self.previous_hash}
+        block_list = [self.timestamp, [tr.transaction_id for tr in self.transactions], self.nonce, self.previous_hash]
 
-        block_dump = pickle.dumps(block_dict)
-        return SHA256.new(block_dump).hexdigest()
+        block_dump = json.dumps(block_list.__str__())
+        return SHA256.new(block_dump.encode("ISO-8859-2")).hexdigest()
 
     def add_transaction(self, transaction):
         """Adds a new transaction in the block."""
-        
+
         self.transactions.append(transaction)
         if len(self.transactions) == CAPACITY:
             return True
