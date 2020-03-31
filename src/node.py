@@ -27,15 +27,19 @@ class Node:
         nbc (int): the noobcash coins that the node has.
         chain (Blockchain): the blockchain that the node has.
         wallet (Wallet): the wallet of the node.
-        ring (list): list of information about other nodes (id, ip, port, public_key, balance).
+        ring (list): list of information about other nodes
+                     (id, ip, port, public_key, balance).
         lock (Lock): a lock in order to provide mutual exclution in mining.
-        stop_mining (boolean): True when mining should stop (when a confirmed block arrives).
-        current_block (Block): the block that the node is fills with transactions.
-        unconfirmed_blocks (deque): A queue that contains all the blocks waiting for mining.
+        stop_mining (boolean): True when mining should stop
+                               (when a confirmed block arrives).
+        current_block (Block): the block that the node is fills with
+                               transactions.
+        unconfirmed_blocks (deque): A queue that contains all the blocks
+                                    waiting for mining.
     """
 
     def __init__(self):
-        """Inits a Node"""
+        """Inits a Node."""
         self.id = None
         self.nbc = 0
         self.chain = Blockchain()
@@ -49,11 +53,11 @@ class Node:
         self.unconfirmed_blocks = deque()
 
     def __str__(self):
-        """Returns a string representation of a Node object"""
+        """Returns a string representation of a Node object."""
         return str(self.__class__) + ": " + str(self.__dict__)
 
     def create_new_block(self):
-        """Creates a new block for the blockchain"""
+        """Creates a new block for the blockchain."""
         if len(self.chain.blocks) == 0:
             # Here, the genesis block is created.
             new_idx = 0
@@ -71,7 +75,13 @@ class Node:
         """
 
         self.ring.append(
-            {'id': id, 'ip': ip, 'port': port, 'public_key': public_key, 'balance': balance})
+            {
+                'id': id,
+                'ip': ip,
+                'port': port,
+                'public_key': public_key,
+                'balance': balance
+            })
 
     def create_transaction(self, receiver, receiver_id, amount):
         """Creates a new transaction.
@@ -86,18 +96,20 @@ class Node:
         nbc_sent = 0
         for tr in self.wallet.transactions:
             for output in tr.transaction_outputs:
-                if output.recipient == self.wallet.public_key and output.unspent:
+                if (output.recipient == self.wallet.public_key and
+                        output.unspent):
                     inputs.append(TransactionInput(tr.transaction_id))
                     inputs_ids.append(tr.transaction_id)
                     output.unspent = False
                     nbc_sent += output.amount
             if nbc_sent >= amount:
-                # Exit the loop when UTXOs exceeds the amount of the transaction.
+                # Exit the loop when UTXOs exceeds the amount of
+                # the transaction.
                 break
 
         if nbc_sent < amount:
-            # If the node don't have enough coins, the possible inputs turn into
-            # unspent again.
+            # If the node don't have enough coins, the possible inputs turn
+            # into unspent again
             for tr in self.wallet.transactions:
                 for tr_output in tr.transaction_outputs:
                     if tr_output.transaction_id in inputs_ids:
@@ -105,8 +117,14 @@ class Node:
             return False
 
         transaction = Transaction(
-            sender_address=self.wallet.public_key, sender_id=self.id, receiver_address=receiver, receiver_id=receiver_id, amount=amount,
-            transaction_inputs=inputs, nbc_sent=nbc_sent)
+            sender_address=self.wallet.public_key,
+            sender_id=self.id,
+            receiver_address=receiver,
+            receiver_id=receiver_id,
+            amount=amount,
+            transaction_inputs=inputs,
+            nbc_sent=nbc_sent
+        )
 
         # Sign the transaction
         transaction.sign_transaction(self.wallet.private_key)
@@ -125,12 +143,12 @@ class Node:
         """Add transaction to the block.
 
         This method adds a transaction in the block and checks if the current
-        block is ready to be mined. Also, the wallet transactions and the balance
-        of each node are updated.
+        block is ready to be mined. Also, the wallet transactions and the
+        balance of each node are updated.
         """
 
-        # If the node is the recipient or the sender of the transaction, it adds the
-        # transaction in its wallet.
+        # If the node is the recipient or the sender of the transaction,
+        # it adds the transaction in its wallet.
         if (transaction.receiver_address == self.wallet.public_key):
             self.wallet.transactions.append(transaction)
         if (transaction.sender_address == self.wallet.public_key):
@@ -183,9 +201,9 @@ class Node:
         """Broadcasts a transaction to the whole network.
 
         This is called each time a new transaction is created. In order to
-        send the transaction simultaneously, each request is sent by a different
-        thread. If all nodes accept the transaction, the node adds it in the current
-        block.
+        send the transaction simultaneously, each request is sent by a
+        different thread. If all nodes accept the transaction, the node adds
+        it in the current block.
         """
         def thread_func(node, responses, endpoint):
             if node['id'] != self.id:
@@ -222,10 +240,10 @@ class Node:
     def validate_transaction(self, transaction):
         """Validates an incoming transaction.
 
-            The validation consists of:
-            - verification of the signature.
-            - check that the transaction inputs are unspent transactions.
-            - create the 2 transaction outputs and add them in UTXOs list.
+        The validation consists of:
+        - verification of the signature.
+        - check that the transaction inputs are unspent transactions.
+        - create the 2 transaction outputs and add them in UTXOs list.
         """
 
         if not transaction.verify_signature():
@@ -247,7 +265,8 @@ class Node:
         block.index = self.chain.blocks[-1].index + 1
         block.previous_hash = self.chain.blocks[-1].current_hash
         computed_hash = block.get_hash()
-        while not computed_hash.startswith('0' * MINING_DIFFICULTY) and not self.stop_mining:
+        while (not computed_hash.startswith('0' * MINING_DIFFICULTY) and
+                not self.stop_mining):
             block.nonce += 1
             computed_hash = block.get_hash()
         block.current_hash = computed_hash
@@ -258,8 +277,8 @@ class Node:
         """
         Broadcasts a validated block in the whole network.
 
-        This method is called each time a new block is mined. If at least one node
-        accepts the block, the node adds the block in the chain.
+        This method is called each time a new block is mined. If at least
+        one node accepts the block, the node adds the block in the chain.
         """
 
         block_accepted = False
@@ -294,7 +313,8 @@ class Node:
     def validate_previous_hash(self, block):
         """Validates the previous hash of an incoming block.
 
-        The previous hash must be equal to the hash of the previous block in the blockchain.
+        The previous hash must be equal to the hash of the previous block in
+        the blockchain.
         """
 
         return block.previous_hash == self.chain.blocks[-1].current_hash
@@ -306,26 +326,39 @@ class Node:
             - check that current hash is valid.
             - validate the previous hash.
         """
-        return self.validate_previous_hash(block) and (block.current_hash == block.get_hash())
+        return (self.validate_previous_hash(block) and
+                (block.current_hash == block.get_hash()))
 
     def filter_blocks(self, mined_block):
         """Filters the queue of the unconfirmed blocks.
 
-        This method is called each time a new block is added in the blockchain. The incoming
-        block may contains transactions that are included in the unconfirmed blocks too. These
-        'double' transactions are removed from the queue.
+        This method is called each time a new block is added in the blockchain.
+        The incoming block may contains transactions that are included in the
+        unconfirmed blocks too. These 'double' transactions are removed from
+        the queue.
         """
         with self.block_lock:
             total_transactions = list(itertools.chain.from_iterable(
-                [unc_block.transactions for unc_block in self.unconfirmed_blocks]))
+                [
+                    unc_block.transactions
+                    for unc_block
+                    in self.unconfirmed_blocks
+                ]))
 
             if (self.current_block):
                 total_transactions.extend(self.current_block.transactions)
 
             self.current_block.transactions = []
 
-            filtered_transactions = [transaction for transaction in total_transactions if (
-                transaction not in mined_block.transactions)]
+            filtered_transactions = [
+                transaction
+                for transaction
+                in total_transactions
+                if (
+                    transaction
+                    not in mined_block.transactions
+                )
+            ]
 
             final_idx = 0
             if not self.unconfirmed_blocks:
@@ -335,8 +368,9 @@ class Node:
 
             i = 0
             while ((i + 1) * CAPACITY <= len(filtered_transactions)):
-                self.unconfirmed_blocks[i].transactions = deepcopy(filtered_transactions[i * CAPACITY:(
-                    i + 1) * CAPACITY])
+                self.unconfirmed_blocks[i].transactions = deepcopy(
+                    filtered_transactions[i * CAPACITY:(
+                        i + 1) * CAPACITY])
                 i += 1
 
             if i * CAPACITY < len(filtered_transactions):
@@ -367,12 +401,16 @@ class Node:
         blocks = chain.blocks
         for i in range(len(blocks)):
             if i == 0:
-                if blocks[i].previous_hash != 1 or blocks[i].current_hash != blocks[i].get_hash():
+                if (blocks[i].previous_hash != 1 or
+                        blocks[i].current_hash != blocks[i].get_hash()):
                     return False
             else:
-                valid_current_hash = blocks[i].current_hash == blocks[i].get_hash(
+                valid_current_hash = (
+                    blocks[i].current_hash == blocks[i].get_hash()
                 )
-                valid_previous_hash = blocks[i].previous_hash == blocks[i - 1].current_hash
+                valid_previous_hash = (
+                    blocks[i].previous_hash == blocks[i - 1].current_hash
+                )
                 if not valid_current_hash or not valid_previous_hash:
                     return False
         return True
@@ -399,27 +437,59 @@ class Node:
             - validate the given blockchains.
             - keep the longest one.
         """
-        selected_chain = None
-        for ring_node in self.ring:
-            if ring_node['id'] != self.id:
-                address = 'http://' + ring_node['ip'] + ':' + ring_node['port']
+        def thread_func(node, chains):
+            if node['id'] != self.id:
+                address = 'http://' + node['ip'] + ':' + node['port']
                 response = requests.get(address + "/send_chain")
                 new_blockchain = pickle.loads(response._content)
+                chains.append(new_blockchain)
 
-                if selected_chain:
-                    if self.validate_chain(new_blockchain) and len(new_blockchain.blocks) > len(selected_chain.blocks):
-                        selected_chain = new_blockchain
-                else:
-                    if self.validate_chain(new_blockchain) and len(new_blockchain.blocks) > len(self.chain.blocks):
-                        selected_chain = new_blockchain
+        threads = []
+        chains = []
+        for node in self.ring:
+            thread = Thread(target=thread_func, args=(
+                node, chains))
+            threads.append(thread)
+            thread.start()
+
+        for tr in threads:
+            tr.join()
+
+        selected_chain = None
+        for chain in chains:
+            if selected_chain:
+                if (self.validate_chain(chain) and
+                        (
+                            len(chain.blocks) >
+                            len(selected_chain.blocks)
+                        )):
+                    selected_chain = chain
+            else:
+                if (self.validate_chain(chain)
+                        and (
+                            len(chain.blocks) >
+                            len(self.chain.blocks)
+                        )):
+                    selected_chain = chain
 
         if selected_chain:
             self.stop_mining = True
             with self.filter_lock:
                 i = len(selected_chain.blocks) - 1
-                while i > 0 and (selected_chain.blocks[i].current_hash != self.chain.blocks[-1].current_hash):
-                    self.filter_blocks(selected_chain.blocks[i])
+                while (
+                        i > 0 and
+                        ((
+                            selected_chain.blocks[i].current_hash !=
+                            self.chain.blocks[-1].current_hash
+                        ))):
                     i -= 1
+
+                for bl in reversed(self.chain.blocks[i+1:]):
+                    self.unconfirmed_blocks.appendleft(bl)
+
+                for bl in selected_chain.blocks[i + 1:]:
+                    self.filter_blocks(bl)
+
                 self.chain = selected_chain
                 self.stop_mining = False
         return self.validate_block(new_block)
