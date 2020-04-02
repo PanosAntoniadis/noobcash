@@ -462,14 +462,14 @@ class Node:
                         (
                             len(chain.blocks) >
                             len(selected_chain.blocks)
-                        )):
+                )):
                     selected_chain = chain
             else:
                 if (self.validate_chain(chain)
                         and (
                             len(chain.blocks) >
                             len(self.chain.blocks)
-                        )):
+                )):
                     selected_chain = chain
 
         if selected_chain:
@@ -484,7 +484,7 @@ class Node:
                         ))):
                     i -= 1
 
-                for bl in reversed(self.chain.blocks[i+1:]):
+                for bl in reversed(self.chain.blocks[i + 1:]):
                     self.unconfirmed_blocks.appendleft(bl)
 
                 for bl in selected_chain.blocks[i + 1:]:

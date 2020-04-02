@@ -47,7 +47,8 @@ class Block:
 
         # We should compute current hash without using the
         # field self.current_hash.
-        block_list = [self.timestamp, [tr.transaction_id for tr in self.transactions], self.nonce, self.previous_hash]
+        block_list = [self.timestamp, [
+            tr.transaction_id for tr in self.transactions], self.nonce, self.previous_hash]
 
         block_dump = json.dumps(block_list.__str__())
         return SHA256.new(block_dump.encode("ISO-8859-2")).hexdigest()
