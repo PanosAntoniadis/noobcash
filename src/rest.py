@@ -5,6 +5,7 @@ import threading
 
 import config
 import endpoints
+import block
 
 from flask_cors import CORS
 from argparse import ArgumentParser
@@ -39,6 +40,8 @@ if __name__ == '__main__':
         '-p', type=int, help='port to listen on', required=True)
     parser.add_argument(
         '-n', type=int, help='number of nodes in the blockchain', required=True)
+    parser.add_argument('-capacity', type=int,
+                        help='number of transactions a block can have', required=True)
     parser.add_argument('-bootstrap', action='store_true',
                         help='set if the current node is the bootstrap')
 
@@ -46,6 +49,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
     port = args.p
     endpoints.n = args.n
+    block.CAPACITY = args.capacity
     is_bootstrap = args.bootstrap
 
     if (is_bootstrap):

@@ -4,8 +4,8 @@ from Crypto.Hash import SHA256
 import pickle
 
 # Capacity defines the maximum number of transactions
-# a block can have.
-CAPACITY = 1
+# a block can have (default value).
+CAPACITY = 5
 
 
 class Block:

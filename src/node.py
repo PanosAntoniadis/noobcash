@@ -14,8 +14,8 @@ from wallet import Wallet
 from transaction import Transaction
 from transaction_input import TransactionInput
 
-# Set MINING_DIFFICULTY
-MINING_DIFFICULTY = 4
+# Set default MINING_DIFFICULTY
+MINING_DIFFICULTY = 5
 
 
 class Node:

@@ -1,6 +1,7 @@
 import requests
 import pickle
 import time
+import node
 
 from flask import Blueprint, jsonify, request, render_template
 
@@ -277,3 +278,18 @@ def get_metrics():
     '''
 
     return jsonify({'num_blocks': len(node.chain.blocks), 'difficulty': MINING_DIFFICULTY, 'capacity': CAPACITY})
+
+@rest_api.route('/api/set_difficulty', methods=['POST'])
+def set_difficulty():
+    '''Endpoint that changes the mining difficulty.
+        Input:
+            value: the new mining difficulty.
+        Returns:
+            message: the outcome of the procedure.
+    '''
+
+    # Get the arguments.
+    value = int(request.form.get('value'))
+    node.MINING_DIFFICULTY = value
+
+    return jsonify({'message': 'Mining difficulty changed.'})
