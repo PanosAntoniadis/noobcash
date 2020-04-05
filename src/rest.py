@@ -36,13 +36,17 @@ CORS(app)
 if __name__ == '__main__':
     # Define the argument parser.
     parser = ArgumentParser(description='Rest api of noobcash.')
-    parser.add_argument(
+
+    required = parser.add_argument_group('required arguments')
+    optional = parser.add_argument_group('optional_arguments')
+
+    required.add_argument(
         '-p', type=int, help='port to listen on', required=True)
-    parser.add_argument(
+    required.add_argument(
         '-n', type=int, help='number of nodes in the blockchain', required=True)
-    parser.add_argument('-capacity', type=int,
-                        help='number of transactions a block can have', required=True)
-    parser.add_argument('-bootstrap', action='store_true',
+    required.add_argument('-capacity', type=int,
+                        help='capacity of a block', required=True)
+    optional.add_argument('-bootstrap', action='store_true',
                         help='set if the current node is the bootstrap')
 
     # Parse the given arguments.

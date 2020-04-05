@@ -193,7 +193,8 @@ def client():
 if __name__ == "__main__":
     # Define the argument parser.
     parser = ArgumentParser(description='CLI client of noobcash.')
-    parser.add_argument(
+    required = parser.add_argument_group('required arguments')
+    required.add_argument(
         '-p', type=int, help='port to listen on', required=True)
 
     # Parse the given arguments.
