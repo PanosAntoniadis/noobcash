@@ -1,6 +1,6 @@
 <p align="center">
     <br>
-    <img src="webapp/noobcash/static/noobcash/images/logo.png" alt="Noobcash" width="400"/>
+    <img src="etc/logo.png" alt="Noobcash" width="400"/>
     <br>
 <p>
 
@@ -73,6 +73,9 @@ You will be able to access all of the nodes, in order for you to be able to chec
     ```
 
     > **_NOTE:_** Each execution of the code above represents a CLI client for the corresponding node at the specified port P.
+    
+    **Cli Client Demo**
+    ![client-demo](etc/client-demo.gif)
 
 - Run the webapp:
 
@@ -103,7 +106,7 @@ You will be able to access all of the nodes, in order for you to be able to chec
     - Flask-Cors
     - pycryptodome
     - requests
-    - urllib3.
+    - urllib3
 2. The webapp is developed using Django 3.0.4 and Python 3.6
 
 ## Evaluation of the system
@@ -140,7 +143,7 @@ We evaluate the performance and the scalability of Noobcash by running the syste
 Developed by
 
 <p align="center">
-    <a href="https://github.com/PanosAntoniadis"> <img src="webapp/noobcash/static/noobcash/images/antoniadis.png" width="10%"></a>  <a href="https://github.com/Nick-Buzz"><img src="webapp/noobcash/static/noobcash/images/bazotis.png" width="10%"></a>  <a href="https://github.com/ThanosM97"><img src="webapp/noobcash/static/noobcash/images/masouris.png" width="10%"></a>
+    <a href="https://github.com/PanosAntoniadis"> <img src="etc/antoniadis.png" width="10%"></a>  <a href="https://github.com/Nick-Buzz"><img src="etc/bazotis.png" width="10%"></a>  <a href="https://github.com/ThanosM97"><img src="etc/masouris.png" width="10%"></a>
 <p>
     
 as a semester project for the Distributed Systems course of NTUA ECE.
