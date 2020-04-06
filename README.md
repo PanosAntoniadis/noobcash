@@ -72,7 +72,7 @@ You will be able to access all of the nodes, in order for you to be able to chec
       -p P        port to listen on
     ```
 
-> **_NOTE:_** Each execution of the code above represents a CLI client for the corresponding node at the specified port P.
+    > **_NOTE:_** Each execution of the code above represents a CLI client for the corresponding node at the specified port P.
 
 - Run the webapp:
 
