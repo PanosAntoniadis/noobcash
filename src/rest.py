@@ -45,15 +45,15 @@ if __name__ == '__main__':
     required.add_argument(
         '-n', type=int, help='number of nodes in the blockchain', required=True)
     required.add_argument('-capacity', type=int,
-                        help='capacity of a block', required=True)
+                          help='capacity of a block', required=True)
     optional.add_argument('-bootstrap', action='store_true',
-                        help='set if the current node is the bootstrap')
+                          help='set if the current node is the bootstrap')
 
     # Parse the given arguments.
     args = parser.parse_args()
     port = args.p
     endpoints.n = args.n
-    block.CAPACITY = args.capacity
+    node.capacity = args.capacity
     is_bootstrap = args.bootstrap
 
     if (is_bootstrap):

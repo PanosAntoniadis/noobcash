@@ -9,13 +9,13 @@ from collections import deque
 from threading import Lock, Thread
 
 from blockchain import Blockchain
-from block import Block, CAPACITY
+from block import Block
 from wallet import Wallet
 from transaction import Transaction
 from transaction_input import TransactionInput
 
 # Set default MINING_DIFFICULTY
-MINING_DIFFICULTY = 5
+MINING_DIFFICULTY = 3
 
 
 class Node:
@@ -36,6 +36,7 @@ class Node:
                                transactions.
         unconfirmed_blocks (deque): A queue that contains all the blocks
                                     waiting for mining.
+        capacity (int): max number of transactions in each block.
     """
 
     def __init__(self):
@@ -51,6 +52,7 @@ class Node:
         self.stop_mining = False
         self.current_block = None
         self.unconfirmed_blocks = deque()
+        self.capacity = None
 
     def __str__(self):
         """Returns a string representation of a Node object."""
@@ -167,7 +169,7 @@ class Node:
             self.current_block = self.create_new_block()
 
         self.block_lock.acquire()
-        if self.current_block.add_transaction(transaction):
+        if self.current_block.add_transaction(transaction, self.capacity):
 
             # Mining procedure includes:
             # - add the current block in the queue of unconfirmed blocks.
@@ -367,15 +369,15 @@ class Node:
                 return
 
             i = 0
-            while ((i + 1) * CAPACITY <= len(filtered_transactions)):
+            while ((i + 1) * self.capacity <= len(filtered_transactions)):
                 self.unconfirmed_blocks[i].transactions = deepcopy(
-                    filtered_transactions[i * CAPACITY:(
-                        i + 1) * CAPACITY])
+                    filtered_transactions[i * self.capacity:(
+                        i + 1) * self.capacity])
                 i += 1
 
-            if i * CAPACITY < len(filtered_transactions):
+            if i * self.capacity < len(filtered_transactions):
                 self.current_block.transactions = deepcopy(
-                    filtered_transactions[i * CAPACITY:])
+                    filtered_transactions[i * self.capacity:])
 
             for i in range(len(self.unconfirmed_blocks) - i):
                 self.unconfirmed_blocks.pop()

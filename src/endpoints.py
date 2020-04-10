@@ -6,7 +6,7 @@ import node
 from flask import Blueprint, jsonify, request, render_template
 
 from node import Node, MINING_DIFFICULTY
-from block import Block, CAPACITY
+from block import Block
 from transaction import Transaction
 from transaction_output import TransactionOutput
 from node import Node
@@ -277,7 +277,8 @@ def get_metrics():
             difficulty: the mining difficulty
     '''
 
-    return jsonify({'num_blocks': len(node.chain.blocks), 'difficulty': MINING_DIFFICULTY, 'capacity': CAPACITY})
+    return jsonify({'num_blocks': len(node.chain.blocks), 'difficulty': MINING_DIFFICULTY, 'capacity': node.capacity})
+
 
 @rest_api.route('/api/set_difficulty', methods=['POST'])
 def set_difficulty():

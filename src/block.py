@@ -3,10 +3,6 @@ from time import time
 from Crypto.Hash import SHA256
 import pickle
 
-# Capacity defines the maximum number of transactions
-# a block can have (default value).
-CAPACITY = 5
-
 
 class Block:
     """
@@ -53,11 +49,11 @@ class Block:
         block_dump = json.dumps(block_list.__str__())
         return SHA256.new(block_dump.encode("ISO-8859-2")).hexdigest()
 
-    def add_transaction(self, transaction):
+    def add_transaction(self, transaction, capacity):
         """Adds a new transaction in the block."""
 
         self.transactions.append(transaction)
-        if len(self.transactions) == CAPACITY:
+        if len(self.transactions) == capacity:
             return True
 
         return False
