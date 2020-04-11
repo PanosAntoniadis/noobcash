@@ -15,7 +15,7 @@ from transaction import Transaction
 from transaction_input import TransactionInput
 
 # Set default MINING_DIFFICULTY
-MINING_DIFFICULTY = 3
+MINING_DIFFICULTY = 4
 
 
 class Node:
