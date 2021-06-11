@@ -13,7 +13,7 @@ Jinja2==2.11.3
 MarkupSafe==1.1.1
 prompt-toolkit==1.0.14
 pycryptodome==3.9.7
-Pygments==2.6.1
+Pygments==2.7.4
 PyInquirer==1.0.3
 pytz==2019.3
 regex==2020.2.20
