@@ -17,7 +17,7 @@ Pygments==2.7.4
 PyInquirer==1.0.3
 pytz==2019.3
 regex==2020.2.20
-requests==2.23.0
+requests==2.31.0
 six==1.14.0
 sqlparse==0.4.4
 texttable==1.6.2
